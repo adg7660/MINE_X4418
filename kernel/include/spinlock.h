@@ -49,7 +49,7 @@ typedef struct spinlock {
 #define _raw_spin_unlock_irqrestore(lock, flags)	__UNLOCK_IRQRESTORE(lock, flags)
 #define _raw_spin_trylock(lock)						({ __LOCK(lock); 1; })
 
-#define raw_spin_lock_init(lock) do { *(lock) = (struct raw_spinlock){}; } while (0)
+#define raw_spin_lock_init(lock) do { *(lock) = (struct raw_spinlock){ .raw_lock = { 0 } }; } while (0)
 
 #define raw_spin_lock(lock)	_raw_spin_lock(lock)
 #define raw_spin_unlock(lock)		_raw_spin_unlock(lock)
@@ -67,6 +67,22 @@ typedef struct spinlock {
 		_raw_spin_unlock_irqrestore(lock, flags);	\
 	} while (0)
 
+
+/*
+ * Map the spin_lock functions to the raw variants for PREEMPT_RT=n
+ */
+
+static inline raw_spinlock_t *spinlock_check(spinlock_t *lock)
+{
+	return &lock->rlock;
+}
+
+#define SPIN_LOCK_INIT()	{ .rlock = { .raw_lock = { 0 } } }
+
+#define spin_lock_init(_lock)				\
+do {							\
+	raw_spin_lock_init(spinlock_check(_lock));		\
+} while (0)
 
 static inline void spin_init(spinlock_t *lock)
 {
@@ -88,10 +104,10 @@ static inline int spin_trylock(spinlock_t *lock)
 	return raw_spin_trylock(&lock->rlock);
 }
 
-static inline void spin_lock_irqsave(spinlock_t *lock, unsigned long flags)
-{
-	raw_spin_lock_irqsave(&lock->rlock, flags);
-}
+#define spin_lock_irqsave(lock, flags)				\
+do {								\
+	raw_spin_lock_irqsave(spinlock_check(lock), flags);	\
+} while (0)
 
 static inline void spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags)
 {

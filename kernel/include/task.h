@@ -16,7 +16,7 @@
 #ifndef __TASK_H__
 #define __TASK_H__
 
-#include <sys/types.h>
+#include <types.h>
 #include <memory.h>
 #include <cpu.h>
 #include <lib.h>
@@ -75,7 +75,7 @@ struct task_struct {
 	struct mm_struct *mm;
 	struct thread_struct *thread;
 	struct cpu_context_save cpu_context;
-	struct List list;
+	struct list_head list;
 
 	/*0x0000,0000,0000,0000 - 0x0000,7fff,ffff,ffff user*/
 	/*0xffff,8000,0000,0000 - 0xffff,ffff,ffff,ffff kernel*/
@@ -127,7 +127,6 @@ extern struct thread_struct init_thread;
 		.next = &tsk,		\
 		.parent = &tsk,		\
 	}
-
 
 extern struct task_struct * current;
 static inline struct task_struct * get_current() {

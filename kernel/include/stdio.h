@@ -1,9 +1,11 @@
 #ifndef __STDIO_H__
 #define __STDIO_H__
+
 #define stdin	0
 #define stdout	1
 #define stderr	2
-#include "sys/types.h"
+
+#include "types.h"
 
 #define	SEEK_SET	0	/* Seek relative to start-of-file */
 #define	SEEK_CUR	1	/* Seek relative to current position */
@@ -12,6 +14,7 @@
 #define SEEK_MAX	3
 
 #include <stdarg.h>
+#include <stddef.h>
 
 extern int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 extern int snprintf(char * buf, size_t size, const char *fmt, ...);

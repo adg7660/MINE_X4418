@@ -26,12 +26,12 @@ struct task_struct *get_next_task()
 {
 	struct task_struct * tsk = NULL;
 
-	if(list_is_empty(&task_schedule[SMP_cpu_id()].task_queue.list))
+	if(list_empty(&task_schedule[SMP_cpu_id()].task_queue.list))
 	{
 		return init_task[SMP_cpu_id()];
 	}
 
-	tsk = container_of(list_next(&task_schedule[SMP_cpu_id()].task_queue.list),struct task_struct,list);
+	tsk = list_next_entry(&task_schedule[SMP_cpu_id()].task_queue, list);
 	list_del(&tsk->list);
 
 	task_schedule[SMP_cpu_id()].running_task_count -= 1;
@@ -46,15 +46,15 @@ void insert_task_queue(struct task_struct *tsk)
 	if(tsk == init_task[SMP_cpu_id()])
 		return ;
 
-	tmp = container_of(list_next(&task_schedule[SMP_cpu_id()].task_queue.list),struct task_struct,list);
+	tmp = list_next_entry(&task_schedule[SMP_cpu_id()].task_queue, list);
 
-	if(list_is_empty(&task_schedule[SMP_cpu_id()].task_queue.list)){
+	if(list_empty(&task_schedule[SMP_cpu_id()].task_queue.list)){
 	}else{
 		while(tmp->vrun_time < tsk->vrun_time)
-			tmp = container_of(list_next(&tmp->list),struct task_struct,list);
+			tmp = list_next_entry(tmp, list);
 	}
 
-	list_add_to_before(&tmp->list,&tsk->list);
+	list_add_tail(&tsk->list, &tmp->list);
 	task_schedule[SMP_cpu_id()].running_task_count += 1;
 }
 
@@ -103,7 +103,7 @@ void schedule_init()
 
 	for(i = 0; i < NR_CPUS; i++)
 	{
-		list_init(&task_schedule[i].task_queue.list);
+		init_list_head(&task_schedule[i].task_queue.list);
 		task_schedule[i].task_queue.vrun_time = 0x7fffffff;
 
 		task_schedule[i].running_task_count = 1;

@@ -16,8 +16,9 @@
 #ifndef __LIB_H__
 #define __LIB_H__
 
-#include <sys/types.h>
+#include <types.h>
 #include <string.h>
+#include <list.h>
 #include <irqflags.h>
 
 #define sti() local_irq_enable()
@@ -26,66 +27,6 @@
 //#define hlt()
 //#define pause()
 
-struct List {
-	struct List * prev;
-	struct List * next;
-};
-
-static inline void list_init(struct List * list) {
-	list->prev = list;
-	list->next = list;
-}
-
-static inline void list_add_to_behind(struct List * entry, struct List * new) {	////add to entry behind
-	new->next = entry->next;
-	new->prev = entry;
-	new->next->prev = new;
-	entry->next = new;
-}
-
-static inline void list_add_to_before(struct List * entry, struct List * new) {	////add to entry behind
-	new->next = entry;
-	entry->prev->next = new;
-	new->prev = entry->prev;
-	entry->prev = new;
-}
-
-static inline void list_del(struct List * entry) {
-	entry->next->prev = entry->prev;
-	entry->prev->next = entry->next;
-}
-
-static inline long list_is_empty(struct List * entry) {
-	if (entry == entry->next && entry->prev == entry)
-		return 1;
-	else
-		return 0;
-}
-
-static inline struct List * list_prev(struct List * entry) {
-	if (entry->prev != NULL)
-		return entry->prev;
-	else
-		return NULL;
-}
-
-static inline struct List * list_next(struct List * entry) {
-	if (entry->next != NULL)
-		return entry->next;
-	else
-		return NULL;
-}
-
-#define offsetof(TYPE, MEMBER) ((unsigned int) &((TYPE *)0)->MEMBER)
-#define container_of(ptr,type,member)	({	\
-	const typeof(((type *)0)->member) * p = (ptr);					\
-		(type *)((unsigned long)p - offsetof(type,member));})
-
-#define list_entry(ptr,type,member)	\
-	container_of(ptr, type, member)
-
-#define list_for_each(pos, head) \
-	for (pos = (head)->next; pos != (head); pos = pos->next)
 
 #define ALIGN(x,a)		(((x) + ((a) - 1)) & (~((a)-1)))
 #define BIT_CLR(x,p)	(((char *)(x))[(p) / (sizeof(char) * 8)] &= ~(1<<((p) % (sizeof(char) * 8))))

@@ -1,7 +1,7 @@
 #ifndef __S3C24X0_H__
 #define __S3C24X0_H__
 
-#include <sys/types.h>
+#include <types.h>
 
 typedef volatile u8		S3C24X0_REG8;
 typedef volatile u16	S3C24X0_REG16;

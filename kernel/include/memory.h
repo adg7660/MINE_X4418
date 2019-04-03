@@ -131,11 +131,12 @@ struct Global_Memory_Descriptor {
 
 struct Page {
 	struct Zone *	zone_struct;
+	struct Slab *	slab;
 	unsigned long	PHY_address;
 	unsigned long	attribute;
 
 	unsigned long	reference_count;
-
+	unsigned long	number;
 	unsigned long	age;
 };
 
@@ -162,7 +163,7 @@ struct Zone {
 extern struct Global_Memory_Descriptor mms;
 
 struct Slab {
-	struct List list;
+	struct list_head list;
 	struct Page * page;
 
 	unsigned long using_count;

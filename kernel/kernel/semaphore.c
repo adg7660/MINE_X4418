@@ -36,7 +36,7 @@ void __up(semaphore_T * semaphore) {
 }
 
 void semaphore_up(semaphore_T * semaphore) {
-	if (list_is_empty(&semaphore->wait.wait_list))
+	if (list_empty(&semaphore->wait.wait_list))
 		atomic_inc(&semaphore->counter);
 	else
 		__up(semaphore);
@@ -46,7 +46,7 @@ void __down(semaphore_T * semaphore) {
 	wait_queue_T wait;
 	wait_queue_init(&wait, current);
 	current->state = TASK_UNINTERRUPTIBLE;
-	list_add_to_before(&semaphore->wait.wait_list, &wait.wait_list);
+	list_add_tail(&semaphore->wait.wait_list, &wait.wait_list);
 
 	schedule();
 }

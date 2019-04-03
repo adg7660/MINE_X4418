@@ -12,7 +12,7 @@
 *
 *
 ***************************************************/
-#include <sys/types.h>
+#include <types.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <printk.h>
@@ -20,7 +20,7 @@
 #include <sys/err.h>
 #include <assert.h>
 #include <pgtable.h>
-#include <mmu.h>
+#include <mmu2.h>
 #include <timer.h>
 #include <task.h>
 #include <ptrace.h>
@@ -88,7 +88,7 @@ unsigned long do_execve(struct pt_regs *regs, char *name, char *argv[], char *en
 	struct file * filp = NULL;
 	unsigned long retval = 0;
 	long pos = 0;
-	
+
 	//TODO:释放旧页表
 	unsigned long flags;
 	raw_local_irq_save(flags);
@@ -360,7 +360,7 @@ unsigned long do_fork(struct pt_regs *regs, unsigned long clone_flags, unsigned 
 
 	*tsk = *current;
 
-	list_init(&tsk->list);
+	init_list_head(&tsk->list);
 	tsk->priority = 2;
 	tsk->pid = global_pid++;
 	tsk->preempt_count = 0;
@@ -459,7 +459,7 @@ void task_init() {
 	//init_mm.start_stack = 0;
 	wait_queue_init(&init_task_union.task.wait_childexit, NULL);
 
-	list_init(&init_task_union.task.list);
+	init_list_head(&init_task_union.task.list);
 
 	kernel_thread(init, 10, CLONE_FS | CLONE_SIGHAND);
 

@@ -81,8 +81,8 @@ struct index_node {
 struct dir_entry {
 	char * name;
 	int name_length;
-	struct List child_node;
-	struct List subdirs_list;
+	struct list_head child_node;
+	struct list_head subdirs_list;
 
 	struct index_node * dir_inode;
 	struct dir_entry * parent;

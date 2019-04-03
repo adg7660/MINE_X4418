@@ -41,7 +41,7 @@ struct dir_entry *d_alloc(struct dir_entry * parent, const char *name, int len)
 }
 
 struct dir_entry * d_lookup(struct dir_entry * parent, char *name, int len){
-	struct List *i;
+	struct list_head *i;
 	list_for_each(i,&parent->subdirs_list){
 		struct dir_entry *temp = container_of(i,struct dir_entry,child_node);
 		if(!strncmp(name, temp->name, len)){
@@ -85,9 +85,9 @@ struct dir_entry * path_walk(char * name, unsigned long flags) {
 			return NULL;
 		}
 
-		list_init(&path->child_node);
-		list_init(&path->subdirs_list);
-		list_add_to_behind(&parent->subdirs_list, &path->child_node);
+		init_list_head(&path->child_node);
+		init_list_head(&path->subdirs_list);
+		list_add(&path->child_node, &parent->subdirs_list);
 
 		if (!*name)
 			goto last_component;

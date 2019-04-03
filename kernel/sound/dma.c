@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <sys/types.h>
+#include <types.h>
 #include <assert.h>
 #include <interrupt.h>
 #include <s3c24xx.h>

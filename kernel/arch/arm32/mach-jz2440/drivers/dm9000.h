@@ -1,8 +1,8 @@
 #ifndef __DM9000_H__
 #define __DM9000_H__
 
-#include <sys/types.h>
-#include <ucos_ii.h>
+#include <types.h>
+
 /*function list*/
 u8_t   DM9000A_ReadReg(u32_t reg);
 void DM9000A_WriteReg(u32_t reg, u8_t val);

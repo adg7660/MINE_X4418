@@ -1,9 +1,8 @@
-#include <sys/types.h>
+#include <types.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <timer.h>
-#include <usb/2440usb.h>
 #include <memory.h>
 #include "command.h"
 #include "fcntl.h"
@@ -16,118 +15,6 @@
 extern cmd_table *ct_list[];
 int run_command(char *cmd);
 
-CMD_DEFINE(ls, "ls", "ls") {
-	struct dirent *dir;
-	int len = 0;
-	int fd = sys_open("/",O_DIRECTORY);
-
-	if(fd >= 0)
-		dir = kmalloc(256, 0);
-	else
-		return 1;
-	
-	while(1){
-		memset(dir,0,256);
-		len = sys_getdents(fd,dir,256);
-		if(len <= 0)
-			break;
-		printf("%s\n", dir->d_name);
-	}
-
-	sys_close(fd);
-	return 0;
-}
-void show_dentry(struct dir_entry *dir,int deep){
-	struct List *i;
-	list_for_each(i,&dir->subdirs_list){
-		for(int i=0;i<deep;i++){printf("-");}
-		printf(">");
-		struct dir_entry *temp = container_of(i,struct dir_entry,child_node);
-		printf("%s\n", temp->name);
-		mdelay(1000);
-		show_dentry(temp,deep+1);
-	}
-}
-CMD_DEFINE(lsdentry, "ls", "ls") {
-	struct dir_entry *dir = root_sb->root;
-	show_dentry(dir,0);
-	return 0;
-}
-CMD_DEFINE(usbdebug, "usbdebug", "usbdebug") {
-#if USB_DEBUG == 1
-	DbgPrintf("show");
-#endif
-	return 0;
-}
-CMD_DEFINE(usbtest, "usbtest", "usbtest") {
-#if 0
-	printf("USB slave 测试\n");
-	usb_init_slave();
-#endif
-	return 0;
-}
-CMD_DEFINE(backtrace, "backtrace", "backtrace") {
-	printf("backtrace测试\n");
-	char s[128];
-	for (int i = 0; i < 128 / 3; i++) {
-		*(volatile int *)(s + 3 * i) = 0;
-	}
-	return 0;
-}
-CMD_DEFINE(usbmouse, "usbmouse", "usbmouse") {
-#if 0
-	while (1) {
-		u8_t Buf[4] = {0, 0, 0, 0};
-		switch (getc()) {
-			case 'a':
-				Buf[1] = -1;	//这里一次往左移动一个单位。
-				break;
-			case 'd':
-				Buf[1] = 1;		//这里一次往右移动一个单位。
-				break;
-			case 'w':
-				Buf[2] = -1;	//这里一次往上移动一个单位。
-				break;
-			case 's':
-				Buf[2] = 1;		//这里一次往下移动一个单位。
-				break;
-			case 'j':
-				Buf[0] |= 0x01;	//D0为鼠标左键
-				break;
-			case 'k':
-				Buf[0] |= 0x02;	//D1为鼠标右键
-				break;
-			case 'q':
-			case 'Q':
-				return 0;
-				break;
-			default:
-				break;
-		}
-		usb_send_init(EP1, Buf, sizeof(Buf));
-		usb_send_message(EP1);
-	}
-#endif
-	return 0;
-}
-CMD_DEFINE(delay_u, "delay_u", "delay_u") {
-	if (argc != 2)
-		return 1;
-	int time = simple_strtoul(argv[1], NULL, 10);
-	run_command("RTC");
-	for (int i = time; i > 0; i -= 60000)
-		delay_u((time > 60000) ? 60000 : time);
-	run_command("RTC");
-	return 0;
-}
-CMD_DEFINE(udelay, "udelay", "udelay") {
-	run_command("RTC");
-	if (argc != 2)
-		return 1;
-	udelay(simple_strtoul(argv[1], NULL, 10));
-	run_command("RTC");
-	return 0;
-}
 
 
 void view_hex(char *data, int len){
@@ -159,81 +46,6 @@ void view_hex(char *data, int len){
 	}
 }
 
-CMD_DEFINE(RTC, "RTC", "RTC") {
-#if 0
-	char data[7] = {0};
-	char *week_str[7] = {"一", "二", "三", "四", "五", "六", "日"};
-	char *week;
-	if (argc == 1) {
-		RTC_Read(&data[0], &data[1], &data[2], &data[3], &data[4], &data[5], &data[6]);
-
-		if (data[3] >= 1 && data[3] <= 7) {
-			week = week_str[data[3] - 1];
-			printf("%d年,%d月,%d日,星期%s,%d点,%d分,%d秒\n", 2000 + data[0],
-				   data[1], data[2], week, data[4], data[5], data[6]);
-		} else {
-			printf("error!\n");
-			return 1;
-		}
-	} else if (argc == 8) {
-		for (int i = 0; i < 7; i++) {
-			data[i] = simple_strtoul(argv[i + 1], NULL, 10);
-		}
-		//year:0-99
-		RTC_Set(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
-		if (data[3] >= 1 && data[3] <= 7) {
-			week = week_str[data[3] - 1];
-			printf("%d年,%d月,%d日,星期%s,%d点,%d分,%d秒\n", 2000 + data[0],
-				   data[1], data[2], week, data[4], data[5], data[6]);
-			printf("设置成功\n");
-		} else {
-			printf("error!\n");
-			return 1;
-		}
-	} else {
-		printf("error!参数数量异常\n");
-		return 1;
-	}
-#endif
-	return 0;
-}
-
-CMD_DEFINE(usbslave,
-		   "usbslave - get file from host(PC)",
-		   "[loadAddress] [wait] \n"
-		   "\"wait\" is 0 or 1, 0 means for return immediately, not waits for the finish of transferring") {
-#if 0
-	//TODO:最好将文件下载到文件系统中
-	extern int download_run;
-	extern volatile u32_t dwUSBBufBase;
-	extern volatile u32_t dwUSBBufSize;
-
-	int wait = 1;
-#define BUF_SIZE (1024*1024)
-	/* download_run为1时表示将文件保存在USB Host发送工具dnw指定的位置
-	 * download_run为0时表示将文件保存在参数argv[2]指定的位置
-	 * 要下载程序到内存，然后直接运行时，要设置download_run=1，这也是这个参数名字的来由
-	 */
-	//由于0x3000000存放了页表，必须download_run = 0确保下载地址正确，即不采用上位机设置的地址
-	download_run = 0;//默认由下位机决定地址和大小
-	if (argc == 2) {
-		//dwUSBBufBase = kmalloc(BUF_SIZE);
-		dwUSBBufBase = 0x30a00000;
-		if (!dwUSBBufBase) {
-			printf("malloc memory error!\n");
-			return 1;
-		}
-		wait = (int)simple_strtoul(argv[1], NULL, 16);
-		dwUSBBufSize = BUF_SIZE;
-	} else {
-		return 1;
-	}
-	usb_init_slave();
-	int size = usb_receive(dwUSBBufBase, dwUSBBufSize, wait);
-	assert(size > 0 && size <= BUF_SIZE);
-#endif
-	return 0;
-}
 CMD_DEFINE(mmtest, "mmtest", "mmtest") {
 	UINT16 *data, *data2;
 	data = kmalloc(7680, 0);
@@ -245,52 +57,7 @@ CMD_DEFINE(mmtest, "mmtest", "mmtest") {
 	
 	return 0;
 }
-CMD_DEFINE(analyse_keycode, "analyse_keycode", "analyse_keycode") {
-	while(1){
-		unsigned int c1 = getc();
-		//unsigned int c2 = serial_getc_async();
-		printf("%02X ", c1);
-		//if(c2!=0){
-		//	printf("%02X ", c2);
-		//}
-		//	
-	}
-	return 0;
-}
-static void vt100_response(char *str){
-	printf(str);
-}
-CMD_DEFINE(vt100, "vt100", "vt100") {
-#if 0
-	terminal_init();
-	setRotation(0);
-	vt100_init(vt100_response);
-	fillRect(0, 0, 480, 272, 0);
-	vt100_puts("\e[?7l");
-	test_colors();
-	mdelay(2000); 
-	test_cursor();
-	mdelay(2000);
-	test_edit();
-	mdelay(2000);
-	test_scroll();
-	mdelay(2000);
-#if 0
-	while(1){
-		unsigned int data = getc();
-		if(data == 'T'){ // ´ key on my kb
-			break;
-		}
-		vt100_putc(data);
-	}
-#endif
-#endif
-	return 0;
-}
-CMD_DEFINE(panic, "panic", "panic") {
-	panic();
-	return 0;
-}
+
 CMD_DEFINE(help, "help", "help") {
 	for (int i = 0; ct_list[i] != NULL; i++) {
 		printf("%-20s:\t-%s\n", ct_list[i]->name, ct_list[i]->usage);
@@ -300,20 +67,7 @@ CMD_DEFINE(help, "help", "help") {
 #define CMD_ENTRY(x) & ct_##x
 cmd_table *ct_list[] = {
 	CMD_ENTRY(help),
-	CMD_ENTRY(ls),
-	CMD_ENTRY(lsdentry),
-	CMD_ENTRY(usbslave),
-	CMD_ENTRY(delay_u),
-	CMD_ENTRY(udelay),
-	CMD_ENTRY(usbdebug),
-	CMD_ENTRY(usbmouse),
-	CMD_ENTRY(usbtest),
-	CMD_ENTRY(RTC),
-	CMD_ENTRY(backtrace),
 	CMD_ENTRY(mmtest),
-	CMD_ENTRY(analyse_keycode),
-	CMD_ENTRY(vt100),
-	CMD_ENTRY(panic),
 	NULL
 };
 cmd_table *search_cmd(char *name) {

@@ -16,117 +16,16 @@
  * - scnprintf and vscnprintf
  */
 
-//#include <stdarg.h>
-//#include <linux/module.h>
-#include <sys/types.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <types.h>
 #include <kernel.h>
 #include <div64.h>
 #include <ctype.h>
 #include <string.h>
-
+#include <compiler.h>
 #include "vsprintf.h"
 
-#define unlikely(x) __builtin_expect(!!(x), 0)
-
-/**
- * simple_strtoul - convert a string to an unsigned long
- * @cp: The start of the string
- * @endp: A pointer to the end of the parsed string will be placed here
- * @base: The number base to use
- */
-unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base)
-{
-	unsigned long result = 0,value;
-
-	if (!base) {
-		base = 10;
-		if (*cp == '0') {
-			base = 8;
-			cp++;
-			if ((toupper(*cp) == 'X') && isxdigit(cp[1])) {
-				cp++;
-				base = 16;
-			}
-		}
-	} else if (base == 16) {
-		if (cp[0] == '0' && toupper(cp[1]) == 'X')
-			cp += 2;
-	}
-	while (isxdigit(*cp) &&
-	       (value = isdigit(*cp) ? *cp-'0' : toupper(*cp)-'A'+10) < base) {
-		result = result*base + value;
-		cp++;
-	}
-	if (endp)
-		*endp = (char *)cp;
-	return result;
-}
-
-//EXPORT_SYMBOL(simple_strtoul);
-
-/**
- * simple_strtol - convert a string to a signed long
- * @cp: The start of the string
- * @endp: A pointer to the end of the parsed string will be placed here
- * @base: The number base to use
- */
-long simple_strtol(const char *cp,char **endp,unsigned int base)
-{
-	if(*cp=='-')
-		return -simple_strtoul(cp+1,endp,base);
-	return simple_strtoul(cp,endp,base);
-}
-
-//EXPORT_SYMBOL(simple_strtol);
-
-/**
- * simple_strtoull - convert a string to an unsigned long long
- * @cp: The start of the string
- * @endp: A pointer to the end of the parsed string will be placed here
- * @base: The number base to use
- */
-unsigned long long simple_strtoull(const char *cp,char **endp,unsigned int base)
-{
-	unsigned long long result = 0,value;
-
-	if (!base) {
-		base = 10;
-		if (*cp == '0') {
-			base = 8;
-			cp++;
-			if ((toupper(*cp) == 'X') && isxdigit(cp[1])) {
-				cp++;
-				base = 16;
-			}
-		}
-	} else if (base == 16) {
-		if (cp[0] == '0' && toupper(cp[1]) == 'X')
-			cp += 2;
-	}
-	while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp-'0' : (islower(*cp)
-	    ? toupper(*cp) : *cp)-'A'+10) < base) {
-		result = result*base + value;
-		cp++;
-	}
-	if (endp)
-		*endp = (char *)cp;
-	return result;
-}
-
-//EXPORT_SYMBOL(simple_strtoull);
-
-/**
- * simple_strtoll - convert a string to a signed long long
- * @cp: The start of the string
- * @endp: A pointer to the end of the parsed string will be placed here
- * @base: The number base to use
- */
-long long simple_strtoll(const char *cp,char **endp,unsigned int base)
-{
-	if(*cp=='-')
-		return -simple_strtoull(cp+1,endp,base);
-	return simple_strtoull(cp,endp,base);
-}
 
 static int skip_atoi(const char **s)
 {
@@ -776,53 +675,53 @@ int vsscanf(const char * buf, const char * fmt, va_list args)
 		case 'H':	/* that's 'hh' in format */
 			if (is_sign) {
 				signed char *s = (signed char *) va_arg(args,signed char *);
-				*s = (signed char) simple_strtol(str,&next,base);
+				*s = (signed char) strtol(str,&next,base);
 			} else {
 				unsigned char *s = (unsigned char *) va_arg(args, unsigned char *);
-				*s = (unsigned char) simple_strtoul(str, &next, base);
+				*s = (unsigned char) strtoul(str, &next, base);
 			}
 			break;
 		case 'h':
 			if (is_sign) {
 				short *s = (short *) va_arg(args,short *);
-				*s = (short) simple_strtol(str,&next,base);
+				*s = (short) strtol(str,&next,base);
 			} else {
 				unsigned short *s = (unsigned short *) va_arg(args, unsigned short *);
-				*s = (unsigned short) simple_strtoul(str, &next, base);
+				*s = (unsigned short) strtoul(str, &next, base);
 			}
 			break;
 		case 'l':
 			if (is_sign) {
 				long *l = (long *) va_arg(args,long *);
-				*l = simple_strtol(str,&next,base);
+				*l = strtol(str,&next,base);
 			} else {
 				unsigned long *l = (unsigned long*) va_arg(args,unsigned long*);
-				*l = simple_strtoul(str,&next,base);
+				*l = strtoul(str,&next,base);
 			}
 			break;
 		case 'L':
 			if (is_sign) {
 				long long *l = (long long*) va_arg(args,long long *);
-				*l = simple_strtoll(str,&next,base);
+				*l = strtoll(str,&next,base);
 			} else {
 				unsigned long long *l = (unsigned long long*) va_arg(args,unsigned long long*);
-				*l = simple_strtoull(str,&next,base);
+				*l = strtoull(str,&next,base);
 			}
 			break;
 		case 'Z':
 		case 'z':
 		{
 			size_t *s = (size_t*) va_arg(args,size_t*);
-			*s = (size_t) simple_strtoul(str,&next,base);
+			*s = (size_t) strtoul(str,&next,base);
 		}
 		break;
 		default:
 			if (is_sign) {
 				int *i = (int *) va_arg(args, int*);
-				*i = (int) simple_strtol(str,&next,base);
+				*i = (int) strtol(str,&next,base);
 			} else {
 				unsigned int *i = (unsigned int*) va_arg(args, unsigned int*);
-				*i = (unsigned int) simple_strtoul(str,&next,base);
+				*i = (unsigned int) strtoul(str,&next,base);
 			}
 			break;
 		}

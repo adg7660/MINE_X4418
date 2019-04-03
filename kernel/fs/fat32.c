@@ -736,8 +736,8 @@ struct super_block * fat32_read_superblock(struct Disk_Partition_Table_Entry * D
 	sbp->root = (struct dir_entry *)kmalloc(sizeof(struct dir_entry), 0);
 	memset(sbp->root, 0, sizeof(struct dir_entry));
 
-	list_init(&sbp->root->child_node);
-	list_init(&sbp->root->subdirs_list);
+	init_list_head(&sbp->root->child_node);
+	init_list_head(&sbp->root->subdirs_list);
 	sbp->root->parent = sbp->root;
 	sbp->root->dir_ops = &FAT32_dentry_ops;
 	sbp->root->name = (char *)kmalloc(2, 0);

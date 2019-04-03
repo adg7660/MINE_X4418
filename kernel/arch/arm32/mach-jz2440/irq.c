@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <irqs.h>
 #include <kernel.h>
+#include <schedule.h>
 #include <__ffs.h>
 #include "s3c24xx.h"
 
@@ -441,6 +442,14 @@ hw_int_controller con_irqext = {
 	.mask = s3c_irqext_mask,
 	.unmask = s3c_irqext_unmask,
 };
+
+
+void arch_irq_handler_default(struct pt_regs *regs) {
+	int offset = INTOFFSET;
+	unsigned int irq = offset + S3C2440_CPUIRQ_OFFSET;
+	assert((irq >= IRQ_EINT0) && (irq <= IRQ_ADCPARENT));
+	do_irq(irq, regs);
+}
 
 void irq_init(void) {
 	EINTMASK = 0xfffff0;

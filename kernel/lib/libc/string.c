@@ -17,20 +17,25 @@
 //#include <linux/types.h>
 //#include <linux/string.h>
 //#include "types.h"
-#include "ctype.h"
-#include "string.h"
+#include <ctype.h>
+#include <string.h>
+#include <stddef.h>
 
 void serial_putc(unsigned char c);
 unsigned char serial_getc(void);
 extern unsigned int xsize;
 void putc(unsigned char c)
 {
-    serial_putc(c);
+	if(c=='\n')
+		mach_logger(NULL, "\r", 1);
+	mach_logger(NULL, &c, 1);
+	
+    //serial_putc(c);
 }
 
 unsigned char getc(void)
 {
-    return serial_getc();
+    return ' ';
 }
 
 int puts(const char *s)
@@ -558,6 +563,23 @@ void *memchr(const void *s, int c, size_t n)
 			return (void *)(p-1);
 		}
 	}
+	return NULL;
+}
+
+/*
+ * Allocates and duplicates a string
+ */
+char * strdup(const char * s)
+{
+	char * p;
+
+	if(!s)
+		return NULL;
+
+	p = kmalloc(strlen(s) + 1, 0);
+	if(p)
+		return(strcpy(p, s));
+
 	return NULL;
 }
 

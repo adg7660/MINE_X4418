@@ -4,7 +4,7 @@
 extern unsigned long long volatile jiffies;
 
 struct timer_list {
-	struct List list;
+	struct list_head list;
 	unsigned long expire_jiffies;
 	void (* func)(void * data);
 	void *data;

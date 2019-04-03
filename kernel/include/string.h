@@ -1,11 +1,7 @@
+#ifndef __STRING_H__
+#define __STRING_H__
 
-/* We don't want strings.h stuff being user by user stuff by accident */
-
-
-//#include <linux/types.h>	/* for size_t */
-//#include <linux/stddef.h>	/* for NULL */
-
-#include "sys/types.h"
+#include "types.h"
 
 extern char * ___strtok;
 extern char * strpbrk(const char *,const char *);
@@ -20,62 +16,60 @@ extern int putchar(int c);
 /*
  * Include machine specific inline routines
  */
-//#include <asm/string.h>
-
-#ifndef __HAVE_ARCH_STRCPY
 extern char * strcpy(char *,const char *);
-#endif
-#ifndef __HAVE_ARCH_STRNCPY
 extern char * strncpy(char *,const char *, size_t);
-#endif
-#ifndef __HAVE_ARCH_STRCAT
 extern char * strcat(char *, const char *);
-#endif
-#ifndef __HAVE_ARCH_STRNCAT
 extern char * strncat(char *, const char *, size_t);
-#endif
-#ifndef __HAVE_ARCH_STRCMP
 extern int strcmp(const char *,const char *);
-#endif
-#ifndef __HAVE_ARCH_STRNCMP
 extern int strncmp(const char *,const char *,size_t);
-#endif
-#ifndef __HAVE_ARCH_STRNICMP
 extern int strnicmp(const char *, const char *, size_t);
-#endif
-#ifndef __HAVE_ARCH_STRCHR
 extern char * strchr(const char *,int);
-#endif
-#ifndef __HAVE_ARCH_STRRCHR
 extern char * strrchr(const char *,int);
-#endif
-#ifndef __HAVE_ARCH_STRSTR
 extern char * strstr(const char *,const char *);
-#endif
-#ifndef __HAVE_ARCH_STRLEN
 extern size_t strlen(const char *);
-#endif
-#ifndef __HAVE_ARCH_STRNLEN
 extern size_t strnlen(const char *,size_t);
-#endif
+extern char * strdup(const char *);
 
-#ifndef __HAVE_ARCH_MEMSET
 extern void * memset(void *,int,size_t);
-#endif
-#ifndef __HAVE_ARCH_MEMCPY
 extern void * memcpy(void *,const void *,size_t);
-#endif
-#ifndef __HAVE_ARCH_MEMMOVE
 extern void * memmove(void *,const void *,size_t);
-#endif
-#ifndef __HAVE_ARCH_MEMSCAN
 extern void * memscan(void *,int,size_t);
-#endif
-#ifndef __HAVE_ARCH_MEMCMP
 extern int memcmp(const void *,const void *,size_t);
-#endif
-#ifndef __HAVE_ARCH_MEMCHR
 extern void * memchr(const void *,int,size_t);
+
+/*
+ * ffs - find first (least-significant) bit set
+ */
+static inline __attribute__((always_inline)) int ffs(int x)
+{
+	return __builtin_ffs(x);
+}
+
+/*
+ * fls - find last (most-significant) bit set
+ * Note fls(0) = 0, fls(1) = 1, fls(0x80000000) = 32.
+ */
+static inline __attribute__((always_inline)) int fls(int x)
+{
+	return x ? sizeof(x) * 8 - __builtin_clz(x) : 0;
+}
+
+/*
+ * __ffs - find first bit in word.
+ * Undefined if no bit exists, so code should check against 0 first.
+ */
+static inline __attribute__((always_inline)) unsigned long __ffs(unsigned long word)
+{
+	return __builtin_ctzl(word);
+}
+
+/*
+ * __fls - find last (most-significant) set bit in a long word
+ * Undefined if no set bit exists, so code should check against 0 first.
+ */
+static inline __attribute__((always_inline)) unsigned long __fls(unsigned long word)
+{
+	return (sizeof(word) * 8) - 1 - __builtin_clzl(word);
+}
+
 #endif
-
-

@@ -20,7 +20,7 @@
 #include "lib.h"
 
 typedef struct {
-	struct List wait_list;
+	struct list_head wait_list;
 	struct task_struct *tsk;
 } wait_queue_T;
 
