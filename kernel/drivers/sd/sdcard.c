@@ -31,6 +31,7 @@
 #include <sd/sdcard.h>
 #include <time/timer.h>
 #include <core/machine.h>
+#include <ssize.h>
 
 struct sdcard_t
 {

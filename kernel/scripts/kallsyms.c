@@ -38,11 +38,11 @@ int read_symbol(FILE *filp, struct symbol_entry *sym_entry) {
 		}
 		return -1;
 	}
-	if (sym_entry->type == 't'){
-		if(strcmp(string, "$a") == 0)
+	if (sym_entry->type == 't' || sym_entry->type == 'T'){
+		if(string[0] == '$')
 			return -1;
-		if(strcmp(string, "$d") == 0)
-			return -1;
+	} else {
+		return -1;
 	}
 		
 	sym_entry->symbol = strdup(string);

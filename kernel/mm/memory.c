@@ -247,7 +247,7 @@ void init_memory() {
 
 	color_printk(ORANGE, BLACK, "start_code:%#010lx,end_code:%#010lx,end_data:%#010lx,start_brk:%#010lx,end_of_struct:%#010lx\n", mms.start_code, mms.end_code, mms.end_data, mms.start_brk, mms.end_of_struct);
 
-	i = PAGE_2M_NUM(Virt_To_Phy(mms.end_of_struct));
+	i = PAGE_2M_NUM(virt_to_phy(mms.end_of_struct));
 
 	for (j = 1; j <= i; j++) {
 		struct Page *tmp_page = mms.pages_struct + j;
@@ -359,11 +359,11 @@ void *_alloc_pages(int zone_select, unsigned long size, unsigned long page_flags
 	int number = ALIGN(size, PAGE_2M_SIZE) >> PAGE_2M_SHIFT;
 	struct Page *page = alloc_pages(zone_select, number, page_flags);
 	if(page == NULL) return NULL;
-	return Phy_To_Virt(page->PHY_address);
+	return phy_to_virt(page->PHY_address);
 }
 
 void _free_pages(void * addr) {
-	int index = PAGE_2M_NUM(Virt_To_Phy(addr));
+	int index = PAGE_2M_NUM(virt_to_phy(addr));
 	struct Page *page = mms.pages_struct + index;
 	free_pages(page, page->number);
 }
@@ -524,7 +524,7 @@ struct Slab *kmalloc_create(unsigned long size) {
 		case 256:
 		case 512:
 
-			vaddresss = Phy_To_Virt(page->PHY_address);
+			vaddresss = phy_to_virt(page->PHY_address);
 			structsize = sizeof(struct Slab) + PAGE_2M_SIZE / size / 8;
 
 			slab = (struct Slab *)((unsigned char *)vaddresss + PAGE_2M_SIZE - structsize);
@@ -570,7 +570,7 @@ struct Slab *kmalloc_create(unsigned long size) {
 			return NULL;
 	}
 
-	slab->Vaddress = Phy_To_Virt(page->PHY_address);
+	slab->Vaddress = phy_to_virt(page->PHY_address);
 	slab->page = page;
 	page->slab = slab; //TODO:降低page 和 slab 耦合 或者封装
 	memset(slab->color_map, 0xff, slab->color_length);
@@ -589,9 +589,9 @@ unsigned long kfree(void *address) {
 	struct Slab *slab = NULL;
 	void *page_base_address = (void *)((unsigned long)address & PAGE_2M_MASK);
 
-	int index = PAGE_2M_NUM(Virt_To_Phy(address));
+	int index = PAGE_2M_NUM(virt_to_phy(address));
 	struct Page *page = mms.pages_struct + index;
-	if (page->slab == NULL && (ALIGN(Virt_To_Phy(address), PAGE_2M_SIZE) == Virt_To_Phy(address))) {
+	if (page->slab == NULL && (ALIGN(virt_to_phy(address), PAGE_2M_SIZE) == virt_to_phy(address))) {
 		free_pages(page, page->number);
 		return 1;
 	}
@@ -699,7 +699,7 @@ struct Slab_cache *slab_create(unsigned long size, void * (* constructor)(void *
 	slab_cache->cache_pool->using_count = 0;
 	slab_cache->cache_pool->free_count = PAGE_2M_SIZE / slab_cache->size;
 	slab_cache->total_free = slab_cache->cache_pool->free_count;
-	slab_cache->cache_pool->Vaddress = Phy_To_Virt(slab_cache->cache_pool->page->PHY_address);
+	slab_cache->cache_pool->Vaddress = phy_to_virt(slab_cache->cache_pool->page->PHY_address);
 	slab_cache->cache_pool->color_count = slab_cache->cache_pool->free_count;
 	slab_cache->cache_pool->color_length = ALIGN(ALIGN(slab_cache->cache_pool->color_count, 8) / 8, sizeof(unsigned long));
 	slab_cache->cache_pool->color_map = (unsigned long *)kmalloc(slab_cache->cache_pool->color_length, 0);
@@ -782,7 +782,7 @@ void *slab_malloc(struct Slab_cache *slab_cache, unsigned long arg) {
 
 		slab->using_count = 0;
 		slab->free_count = PAGE_2M_SIZE / slab_cache->size;
-		slab->Vaddress = Phy_To_Virt(slab->page->PHY_address);
+		slab->Vaddress = phy_to_virt(slab->page->PHY_address);
 
 		slab->color_count = slab->free_count;
 		slab->color_length = ALIGN(ALIGN(slab->color_count , 8) / 8, sizeof(unsigned long));
@@ -936,9 +936,9 @@ unsigned long slab_init() {
 
 	////////////	init page for kernel code and memory management struct
 
-	i = PAGE_2M_NUM(Virt_To_Phy(mms.end_of_struct));
+	i = PAGE_2M_NUM(virt_to_phy(mms.end_of_struct));
 
-	for (j = PAGE_2M_NUM(PAGE_2M_ALIGN(Virt_To_Phy(tmp_address))); j <= i; j++) {
+	for (j = PAGE_2M_NUM(PAGE_2M_ALIGN(virt_to_phy(tmp_address))); j <= i; j++) {
 		page =  &mms.pages_struct[j];
 		BIT_SET(mms.bits_map, PAGE_2M_NUM(page->PHY_address));
 		page->zone_struct->page_using_count++;
@@ -950,7 +950,7 @@ unsigned long slab_init() {
 
 	for (i = 0; i < ARRAY_SIZE(kmalloc_cache_size); i++) {
 		virtual = (unsigned long *)ALIGN(mms.end_of_struct + PAGE_2M_SIZE * i, PAGE_2M_SIZE);
-		page = Virt_To_2M_Page(virtual);
+		page = virt_to_2M_page(virtual);
 
 		BIT_SET(mms.bits_map, PAGE_2M_NUM(page->PHY_address));
 		page->zone_struct->page_using_count++;

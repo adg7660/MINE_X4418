@@ -26,61 +26,57 @@
  *
  */
 #include <types.h>
+#include <ptrace.h>
 
-struct arm_regs_t {
-	uint32_t esp;
-	uint32_t cpsr;
-	uint32_t r[13];
-	uint32_t sp;
-	uint32_t lr;
-	uint32_t pc;
-};
-
-static void show_regs(struct arm_regs_t * regs)
+static void show_regs(struct pt_regs * regs)
 {
 	int i;
 
-	printf("pc : [<%08lx>] lr : [<%08lx>] cpsr: %08lx\r\n", regs->pc, regs->lr, regs->cpsr);
-	printf("sp : %08lx esp : %08lx\r\n", regs->sp, regs->esp);
+	printf("pc : [<%08lx>] lr : [<%08lx>] cpsr: %08lx\r\n", regs->ARM_pc, regs->ARM_lr, regs->ARM_cpsr);
+	printf("sp : %08lx svc sp : %08lx\r\n", regs->ARM_sp, regs);
 	for(i = 12; i >= 0; i--)
 	{
-		printf("r%-2d: %08lx ", i, regs->r[i]);
+		printf("r%-2d: %08lx ", i, regs->uregs[i]);
 		if(i % 2 == 0)
 			printf("\r\n");
 	}
 	printf("\r\n");
 }
 
-void arm32_do_undefined_instruction(struct arm_regs_t * regs)
+void arm32_do_undefined_instruction(struct pt_regs * regs)
 {
 	show_regs(regs);
-	regs->pc += 4;
+	backtrace(regs->ARM_fp);
+	regs->ARM_pc += 4;
 }
 
-void arm32_do_software_interrupt(struct arm_regs_t * regs)
+void arm32_do_software_interrupt(struct pt_regs * regs)
 {
 	show_regs(regs);
-	regs->pc += 4;
+	backtrace(regs->ARM_fp);
+	regs->ARM_pc += 4;
 }
 
-void arm32_do_prefetch_abort(struct arm_regs_t * regs)
+void arm32_do_prefetch_abort(struct pt_regs * regs)
 {
 	show_regs(regs);
-	regs->pc += 4;
+	backtrace(regs->ARM_fp);
+	regs->ARM_pc += 4;
 }
 
-void arm32_do_data_abort(struct arm_regs_t * regs)
+void arm32_do_data_abort(struct pt_regs * regs)
 {
 	show_regs(regs);
-	regs->pc += 4;
+	backtrace(regs->ARM_fp);
+	regs->ARM_pc += 4;
 }
 
-void arm32_do_irq(struct arm_regs_t * regs)
+void arm32_do_irq(struct pt_regs * regs)
 {
 	interrupt_handle_exception(regs);
 }
 
-void arm32_do_fiq(struct arm_regs_t * regs)
+void arm32_do_fiq(struct pt_regs * regs)
 {
 	interrupt_handle_exception(regs);
 }

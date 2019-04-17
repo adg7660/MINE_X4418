@@ -502,16 +502,8 @@ int sprintf(char * buf, const char *fmt, ...)
 	va_list args;
 	int i;
 
-	va_start(args, fmt);
-/*	putc('P');
-	putc(0x0d);
-	putc(0x0a);
-*/	
+	va_start(args, fmt);	
 	i=vsprintf(buf,fmt,args);
-/*	putc('E');
-	putc(0x0d);
-	putc(0x0a);
-*/	
 	va_end(args);
 	return i;
 }

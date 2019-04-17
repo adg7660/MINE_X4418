@@ -2,10 +2,10 @@ OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
 ENTRY(_start)
 
-STACK_UND_SIZE = 0x40000;
-STACK_ABT_SIZE = 0x40000;
-STACK_IRQ_SIZE = 0x40000;
-STACK_FIQ_SIZE = 0x40000;
+STACK_UND_SIZE = 0x12;
+STACK_ABT_SIZE = 0x12;
+STACK_IRQ_SIZE = 0x12;
+STACK_FIQ_SIZE = 0x12;
 STACK_SRV_SIZE = 0x100000;
 
 MEMORY
@@ -20,11 +20,13 @@ SECTIONS {
 	{
 		PROVIDE(__image_start = .);
 		PROVIDE(__text_start = .);
+		_text = .;
 		arch/arm32/mach-x4418/head.o;
 		*(.text*);
 		*(.init.text);
 		*(.exit.text);
 		PROVIDE(__text_end = .);
+		_etext = .;
 	} > ram
 
 	.initcall ALIGN(8) :

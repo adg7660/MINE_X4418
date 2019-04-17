@@ -4,7 +4,7 @@ WFLAGS		:= -Wall -Wno-unused
 
 ASFLAGS		:= $(WFLAGS)
 CFLAGS		:= $(WFLAGS)
-LDFLAGS		:= -T $(srctree)/arch/$(ARCH)/$(MACH)/kernel.lds -nostdlib
+LDFLAGS		:= -T $(srctree)/arch/$(ARCH)/$(MACH)/user.lds -nostdlib
 
 MCFLAGS		:= -std=gnu99 -O3 \
 				-march=armv7-a -mtune=cortex-a9 -mfpu=vfpv3-d16 \
@@ -15,11 +15,5 @@ MCFLAGS		:= -std=gnu99 -O3 \
 MASFLAGS	:= -D__ASSEMBLY__
 MLDFLAGS	:=
 
-LIBDIRS		:= -L $(dir $(shell $(CC) -march=armv7-a -mtune=cortex-a9 -mfpu=vfpv3-d16 -ffreestanding -mfloat-abi=hard -print-libgcc-file-name))
-LIBS		:= -lgcc
-
-NSIH		:= arch/$(ARCH)/$(MACH)/tools/images/nsih.txt
-
-xend:
-	@echo [USB DOWNLOAD]
-	@udown $(NSIH) $(X_NAME).bin
+LIBDIRS		:=
+LIBS		:=

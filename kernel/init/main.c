@@ -12,7 +12,10 @@ int main() {
 
 	init_memory();
 	slab_init();
-	
+
+	printf("schedule_init\n");
+	schedule_init();
+
 	/* Do initial event */
 	do_init_event();
 
@@ -32,8 +35,7 @@ int main() {
 	}
 	framebuffer_present_render(fb, render, NULL, 0);
 	framebuffer_set_backlight(fb, CONFIG_MAX_BRIGHTNESS);
-	
-	schedule_init();
+
 	task_init();
 	printf("do_exitcalls\n");
 	while(1);

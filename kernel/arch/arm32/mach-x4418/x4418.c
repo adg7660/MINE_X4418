@@ -55,9 +55,11 @@ static int mach_detect(struct machine_t * mach)
 
 static void mach_memmap(struct machine_t * mach)
 {
+	machine_mmap(mach, "static", 0x00000000, 0x00000000, SZ_1G, MAP_TYPE_NCNB);
 	machine_mmap(mach, "ram", 0x40000000, 0x40000000, SZ_128M, MAP_TYPE_CB);
 	machine_mmap(mach, "dma", 0x48000000, 0x48000000, SZ_128M, MAP_TYPE_NCNB);
 	machine_mmap(mach, "heap", 0x50000000, 0x50000000, SZ_256M, MAP_TYPE_CB);
+	machine_mmap(mach, "io", 0xc0000000, 0xc0000000, SZ_256M, MAP_TYPE_NCNB);
 	mmu_setup(mach);
 }
 

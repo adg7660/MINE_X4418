@@ -5,39 +5,17 @@
  * native C library.
  */
 
-#include "types.h"
+#pragma once
 
-#ifndef va_arg
+#include <types.h>
 
-#ifndef _VALIST
-#define _VALIST
-typedef char *va_list;
-#endif /* _VALIST */
+typedef __builtin_va_list	va_list;
 
-/*
- * Storage alignment properties
- */
-#define	 NATIVE_INT		 int
-#define  _AUPBND         (sizeof (NATIVE_INT) - 1)
-#define  _ADNBND         (sizeof (NATIVE_INT) - 1)
+#define va_start(v, l)		__builtin_va_start(v, l)
+#define va_arg(v, l)		__builtin_va_arg(v, l)
+#define va_end(v)			__builtin_va_end(v)
+#define va_copy(d, s)		__builtin_va_copy(d, s)
 
-/*
- * Variable argument list macro definitions
- */
-
-#define _bnd(X, bnd)    (((sizeof (X)) + (bnd)) & (~(bnd)))
-#define va_arg(ap, T)   (*(T *)(((ap) += (_bnd (T, _AUPBND))) - (_bnd (T,_ADNBND))))
-#define va_end(ap)      (void) 0
-#define va_start(ap, A) (void) ((ap) = (((char *) &(A)) + (_bnd (A,_AUPBND))))
-
-#endif /* va_arg */
-
-unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base);
-long simple_strtol(const char *cp,char **endp,unsigned int base);
-unsigned long long simple_strtoull(const char *cp,char **endp,unsigned int base);
-long long simple_strtoll(const char *cp,char **endp,unsigned int base);
-//static int  skip_atoi(const char **s);
-//char * number(char * buf, char * end, long long num, int base, int size, int precision, int type);
 int vsnprintf(char *buf, size_t size, const char *fmt, va_list args);
 int snprintf(char * buf, size_t size, const char *fmt, ...);
 int vsprintf(char *buf, const char *fmt, va_list args);

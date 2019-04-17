@@ -21,10 +21,6 @@ extern long kallsyms_syms_num __attribute__((weak));;
 extern long kallsyms_index[] __attribute__((weak));;
 extern char* kallsyms_names __attribute__((weak));;
 
-extern int __stack_srv_start;
-#define SWI_STACK_BASE_ADDR (&__stack_srv_start)
-
-
 int lookup_kallsyms(unsigned long address) {
 	int index = 0;
 	char * string = (char *) &kallsyms_names;
@@ -47,7 +43,7 @@ void backtrace(unsigned long regs) {
 	unsigned long ret_address;
 
 	for (int i = 0; i < 10; i++) {
-		if (rbp < (unsigned long *)4096 || rbp >= (unsigned long *)SWI_STACK_BASE_ADDR) {
+		if (rbp == 0) {
 			printf("\e[31;40mreach the top\e[0m\n");
 			break;
 		}
@@ -66,10 +62,11 @@ void panic() {
 
 	asm volatile(
 		"mov %0, fp"
-		: "=r"(rbp));
+		: "=r"(rbp)
+	);
 
 	for (int i = 0; i < 10; i++) {
-		if (rbp >= (unsigned long *)SWI_STACK_BASE_ADDR) {
+		if (rbp == 0) {
 			printf("\e[31;40mreach the top\e[0m\n");
 			break;
 		}

@@ -67,8 +67,7 @@ void schedule()
 	current->flags &= ~NEED_SCHEDULE;
 	tsk = get_next_task();
 
-	//color_printk(RED,BLACK,"#schedule:%d#,current->pid=%d,tsk->pid=%d,current->vrun_time=%d, tsk->vrun_time=%d\n",(int)jiffies, current->pid, tsk->pid, current->vrun_time, tsk->vrun_time);
-	//color_printk(RED,BLACK,"current=%X,tsk=%X\n",current, tsk);
+	//color_printk(RED,BLACK,"#schedule:current(pid=%d vrun_time=%d pointer=%X),tsk(pid=%d vrun_time=%d pointer=%X)\n", current->pid, current->vrun_time, current, tsk->pid, tsk->vrun_time, tsk);
 
 	if(!task_schedule[cpu_id].CPU_exec_task_jiffies)
 		switch(tsk->priority)
@@ -85,11 +84,11 @@ void schedule()
 	if (current->vrun_time >= tsk->vrun_time || current->state != TASK_RUNNING) {
 		if(current->state == TASK_RUNNING)
 			insert_task_queue(current);
-		//printf(">\n");
-		//color_printk(GREEN,BLACK,"pc = %X, sp = %X\n",tsk->cpu_context.pc,tsk->cpu_context.sp);
+		//printf("[");
+		//color_printk(GREEN,BLACK,"PC=%X, SP=%X, current PGD=%X, tsk PGD=%X", tsk->cpu_context.pc, tsk->cpu_context.sp, current->mm->pgd, tsk->mm->pgd);
 		switch_mm(current, tsk);
-		switch_to(current,tsk);	
-		//printf("<\n");
+		switch_to(current,tsk);
+		//printf("]\n");
 	} else {
 		insert_task_queue(tsk);
 	}
@@ -109,5 +108,12 @@ void schedule_init()
 		task_schedule[i].running_task_count = 1;
 		task_schedule[i].CPU_exec_task_jiffies = 4;
 	}
+	//TODO：initcall和schedule_init的执行顺序确定
+	init_mm.pgd = (pgd_t *)mmu_get_tlb_base_addr();
 	current = init_task[0];
+	current->mm = &init_mm;
+	wait_queue_init(&init_task_union.task.wait_childexit, NULL);
+	init_list_head(&init_task_union.task.list);
+	init_task_union.task.preempt_count = 0;
+	init_task_union.task.state = TASK_RUNNING;
 }

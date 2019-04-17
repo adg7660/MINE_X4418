@@ -4,8 +4,13 @@
 
 #define S_OFF		8
 
-ENTRY(vector_irq)
-	sub	lr, lr, #4
+	.macro	vector_stub, name, mode, func, correction=0
+	.align	5
+
+ENTRY(vector_\name)
+	.if \correction
+	sub	lr, lr, #\correction
+	.endif
 
 	@
 	@ Save r0, lr_<exception> (parent PC) and spsr_<exception>
@@ -20,7 +25,7 @@ ENTRY(vector_irq)
 	@ Prepare for SVC32 mode.  IRQs remain disabled.
 	@
 	mrs	r0, cpsr
-	eor	r0, r0, #(IRQ_MODE ^ SVC_MODE | PSR_ISETSTATE)
+	eor	r0, r0, #(\mode ^ SVC_MODE | PSR_ISETSTATE)
 	msr	spsr_cxsf, r0
 
 	@
@@ -55,11 +60,27 @@ ENTRY(vector_irq)
 
 	mov	r0, sp
 
-    bl	arch_irq_handler_default
+	mov	lr, pc
+    ldr pc,	=\func
 	
 	msr	spsr_cxsf, r5
 	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
+ENDPROC(vector_\name)
+	.endm
 
+	vector_stub	irq, IRQ_MODE, arch_irq_handler_default, 4
+	//vector_stub	irq, IRQ_MODE, arm32_do_irq, 4
+	vector_stub	dabt, ABT_MODE, arm32_do_data_abort, 8
+	vector_stub	pabt, ABT_MODE, arm32_do_prefetch_abort, 4
+	vector_stub	und, UND_MODE, arm32_do_undefined_instruction
+
+ENTRY(vector_fiq)
+	subs	pc, lr, #4
+ENDPROC(vector_fiq)
+
+ENTRY(vector_addrexcptn)
+	b	vector_addrexcptn
+ENDPROC(vector_addrexcptn)
 
 ENTRY(vector_swi)
 	sub	sp, sp, #S_FRAME_SIZE
@@ -82,6 +103,7 @@ ENTRY(vector_swi)
 	ldmia	sp!, {r4, r5}
 	msr	spsr_cxsf, r8
 	ldmia	sp, {r0 - pc}^			@ load r0 - pc, cpsr
+ENDPROC(vector_swi)
 
 ENTRY(ret_system_call)
 	ldr r8, [sp, #S_PSR]

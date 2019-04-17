@@ -780,7 +780,7 @@ struct file_system_type FAT32_fs_type = {
 void DISK1_FAT32_FS_init() {
 	unsigned char buf[512];
 	struct Disk_Partition_Table DPT;
-
+	disk_init();
 	register_filesystem(&FAT32_fs_type);
 
 	memset(buf, 0, 512);
@@ -788,7 +788,7 @@ void DISK1_FAT32_FS_init() {
 
 	IDE_device_operation.transfer(ATA_READ_CMD, 0x0, 1, (unsigned char *)buf);
 	DPT = *(struct Disk_Partition_Table *)buf;
-	color_printk(BLUE, BLACK, "DPTE[0] start_LBA:%#018lx\ttype:%#018lx\n", DPT.DPTE[0].start_LBA, DPT.DPTE[0].type);
+	color_printk(BLUE, BLACK, "DPTE[0] start_LBA:%#08lx\ttype:%#08lx\n", DPT.DPTE[0].start_LBA, DPT.DPTE[0].type);
 
 	memset(buf, 0, 512);
 	IDE_device_operation.transfer(ATA_READ_CMD, DPT.DPTE[0].start_LBA, 1, (unsigned char *)buf);

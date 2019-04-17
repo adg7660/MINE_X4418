@@ -218,7 +218,7 @@
 	"clk-gate@0xc00a9000": {
 		"parent": "div-uart0",
 		"name": "gate-uart0",
-		"shift": 1,
+		"shift": 2,
 		"invert": false
 	},
 	"clk-link": {
@@ -246,7 +246,7 @@
 	"clk-gate@0xc00a8000": {
 		"parent": "div-uart1",
 		"name": "gate-uart1",
-		"shift": 1,
+		"shift": 2,
 		"invert": false
 	},
 	"clk-link": {
@@ -274,7 +274,7 @@
 	"clk-gate@0xc00aa000": {
 		"parent": "div-uart2",
 		"name": "gate-uart2",
-		"shift": 1,
+		"shift": 2,
 		"invert": false
 	},
 	"clk-link": {
@@ -302,7 +302,7 @@
 	"clk-gate@0xc00ab000": {
 		"parent": "div-uart3",
 		"name": "gate-uart3",
-		"shift": 1,
+		"shift": 2,
 		"invert": false
 	},
 	"clk-link": {
@@ -330,7 +330,7 @@
 	"clk-gate@0xc006e000": {
 		"parent": "div-uart4",
 		"name": "gate-uart4",
-		"shift": 1,
+		"shift": 2,
 		"invert": false
 	},
 	"clk-link": {
@@ -358,7 +358,7 @@
 	"clk-gate@0xc0064000": {
 		"parent": "div-uart5",
 		"name": "gate-uart5",
-		"shift": 1,
+		"shift": 2,
 		"invert": false
 	},
 	"clk-link": {
@@ -721,11 +721,7 @@
 		]
 	},
 
-	"ts-gslx680@0": {
-		"i2c-bus": "i2c-gpio.1",
-		"interrupt-gpio": 61,
-		"maximum-fingers": 10
-	},
+
 
 	"led-gpio@0": {
 		"gpio": 60,

@@ -53,11 +53,11 @@
 #define PAGE_2M_NUM(addr)	((unsigned long)(addr) >> PAGE_2M_SHIFT)
 #define PAGE_4M_NUM(addr)	((unsigned long)(addr) >> PAGE_4M_SHIFT)
 
-#define Virt_To_Phy(addr)	((unsigned long)(addr) - PAGE_OFFSET)
-#define Phy_To_Virt(addr)	((unsigned long *)((unsigned long)(addr) + PAGE_OFFSET))
+#define virt_to_phy(addr)	((unsigned long)(addr) - PAGE_OFFSET)
+#define phy_to_virt(addr)	((unsigned long *)((unsigned long)(addr) + PAGE_OFFSET))
 
-#define Virt_To_2M_Page(kaddr)	(mms.pages_struct + PAGE_2M_NUM(Virt_To_Phy(kaddr)))
-#define Phy_to_2M_Page(kaddr)	(mms.pages_struct + PAGE_2M_NUM((unsigned long)kaddr))
+#define virt_to_2M_page(kaddr)	(mms.pages_struct + PAGE_2M_NUM(virt_to_phy(kaddr)))
+#define phy_to_2M_page(kaddr)	(mms.pages_struct + PAGE_2M_NUM((unsigned long)kaddr))
 
 ////page table attribute
 
@@ -200,8 +200,8 @@ extern struct Slab_cache kmalloc_cache_size[16];
 //#define	flush_tlb_one(addr) flush_pmd_entry(addr)
 #define flush_tlb() local_flush_tlb_all()
 
-extern void arm920_flush_kern_cache_all();
-#define flush_cache() arm920_flush_kern_cache_all()
+extern void v7_flush_kern_cache_all();
+#define flush_cache() v7_flush_kern_cache_all()
 
 #define cpu_get_pgd()	\
 	({						\
@@ -209,7 +209,7 @@ extern void arm920_flush_kern_cache_all();
 		__asm__("mrc	p15, 0, %0, c2, c0, 0"	\
 				: "=r" (pg) : : "cc");		\
 		pg &= ~0x3fff;				\
-		(pgd_t *)Phy_To_Virt(pg);		\
+		(pgd_t *)phy_to_virt(pg);		\
 	})
 
 unsigned long page_init(struct Page * page, unsigned long flags);

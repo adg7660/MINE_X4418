@@ -90,7 +90,7 @@ static void irq_pl192_dispatch(struct irqchip_t * chip)
 
 static void pl192_ctrl_init(virtual_addr_t virt)
 {
-	extern void irq(void);
+	extern void vector_irq(void);
 	int i;
 
 	/*
@@ -126,7 +126,7 @@ static void pl192_ctrl_init(virtual_addr_t virt)
 		write32(virt + VIC_VECPRIORITY0 + 4 * i, 0xf);
 
 	for(i = 0; i < 32; i++)
-		write32(virt + VIC_VECTADDR0 + 4 * i, (u32_t)irq);
+		write32(virt + VIC_VECTADDR0 + 4 * i, (u32_t)vector_irq);
 }
 
 static struct device_t * irq_pl192_probe(struct driver_t * drv, struct dtnode_t * n)

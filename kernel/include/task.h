@@ -163,12 +163,12 @@ unsigned long do_exit(unsigned long exit_code);
 
 void task_init();
 
-extern void cpu_arm920_switch_mm(pgd_t *pgd, struct mm_struct *mm);
+extern void cpu_v7_switch_mm(pgd_t *pgd, struct mm_struct *mm);
 
-#define cpu_switch_mm(pgd,mm) cpu_arm920_switch_mm((pgd_t *)Virt_To_Phy(pgd),mm)
+#define cpu_switch_mm(pgd,mm) cpu_v7_switch_mm((pgd_t *)virt_to_phy(pgd),mm)
 
 static inline void switch_mm(struct task_struct *prev, struct task_struct *next) {
-	cpu_arm920_switch_mm(next->mm->pgd, next->mm);
+	cpu_switch_mm(next->mm->pgd, next->mm);
 }
 extern void exit_mm(struct task_struct *tsk);
 extern void ret_system_call(void);

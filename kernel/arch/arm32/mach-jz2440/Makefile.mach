@@ -10,7 +10,7 @@ MCFLAGS		:= -std=gnu99 -O3 \
 				-march=armv4t -mtune=arm920t \
 				-ffreestanding -msoft-float -fsigned-char \
 				-fno-omit-frame-pointer \
-				-marm -mno-thumb-interwork
+				-marm -mno-thumb-interwork -mno-unaligned-access
 
 MASFLAGS	:= -D__ASSEMBLY__
 MLDFLAGS	:=

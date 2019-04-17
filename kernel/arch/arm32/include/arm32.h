@@ -92,6 +92,12 @@ static inline void arm32_icache_disable(void)
 	arm32_write_p15_c1(value & ~(1 << 12));
 }
 
+static inline void arm32_set_high_exception_vectors(void)
+{
+	uint32_t value = arm32_read_p15_c1();
+	arm32_write_p15_c1(value | (1 << 13));
+}
+
 static inline void arm32_ttb_set(uint32_t base)
 {
 	__asm__ __volatile__(

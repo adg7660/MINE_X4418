@@ -13,9 +13,7 @@
 *
 ***************************************************/
 
-#ifndef __DISK_H__
-
-#define __DISK_H__
+#pragma once
 
 #include "lib.h"
 #include "block.h"
@@ -395,6 +393,3 @@ struct block_buffer_node * make_request(long cmd, unsigned long blocks, long cou
 void add_request(struct block_buffer_node * node);
 long cmd_out();
 void end_request();
-
-
-#endif
