@@ -142,9 +142,9 @@ unsigned int DISK1_FAT32_read_FAT_Entry(struct FAT32_sb_info * fsbi, unsigned in
 unsigned long DISK1_FAT32_write_FAT_Entry(struct FAT32_sb_info * fsbi, unsigned int fat_entry, unsigned int value);
 unsigned long FAT32_find_available_cluster(struct FAT32_sb_info * fsbi);
 
-extern struct index_node_operations FAT32_inode_ops;
+extern struct inode_operations FAT32_inode_ops;
 extern struct file_operations FAT32_file_ops;
-extern struct dir_entry_operations FAT32_dentry_ops;
+extern struct dentry_operations FAT32_dentry_ops;
 extern struct super_block_operations FAT32_sb_ops;
 
 #endif

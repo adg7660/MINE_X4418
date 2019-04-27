@@ -44,12 +44,12 @@ unsigned long DISK1_FAT32_write_FAT_Entry(struct FAT32_sb_info * fsbi, unsigned 
 }
 
 
-long FAT32_open(struct index_node * inode, struct file * filp) {
+long FAT32_open(struct inode * inode, struct file * filp) {
 	return 1;
 }
 
 
-long FAT32_close(struct index_node * inode, struct file * filp) {
+long FAT32_close(struct inode * inode, struct file * filp) {
 	return 1;
 }
 
@@ -254,7 +254,7 @@ long FAT32_lseek(struct file * filp, long offset, long origin) {
 }
 
 
-long FAT32_ioctl(struct index_node * inode, struct file * filp, unsigned long cmd, unsigned long arg) {
+long FAT32_ioctl(struct inode * inode, struct file * filp, unsigned long cmd, unsigned long arg) {
 	return -1;
 }
 
@@ -391,12 +391,12 @@ struct file_operations FAT32_file_ops = {
 };
 
 
-long FAT32_create(struct index_node * inode, struct dir_entry * dentry, int mode) {
+long FAT32_create(struct inode * inode, struct dentry * dentry, int mode) {
 	return -1;
 }
 
 
-struct dir_entry * FAT32_lookup(struct index_node * parent_inode, struct dir_entry * dest_dentry) {
+struct dentry * FAT32_lookup(struct inode * parent_inode, struct dentry * dest_dentry) {
 	struct FAT32_inode_info * finode = parent_inode->private_index_info;
 	struct FAT32_sb_info * fsbi = parent_inode->sb->private_sb_info;
 
@@ -406,7 +406,7 @@ struct dir_entry * FAT32_lookup(struct index_node * parent_inode, struct dir_ent
 	int i = 0, j = 0, x = 0;
 	struct FAT32_Directory * tmpdentry = NULL;
 	struct FAT32_LongDirectory * tmpldentry = NULL;
-	struct index_node * p = NULL;
+	struct inode * p = NULL;
 
 	buf = kmalloc(fsbi->bytes_per_cluster, 0);
 
@@ -565,8 +565,8 @@ continue_cmp_fail:
 	return NULL;
 
 find_lookup_success:
-	p = (struct index_node *)kmalloc(sizeof(struct index_node), 0);
-	memset(p, 0, sizeof(struct index_node));
+	p = (struct inode *)kmalloc(sizeof(struct inode), 0);
+	memset(p, 0, sizeof(struct inode));
 	p->file_size = tmpdentry->DIR_FileSize;
 	p->blocks = (p->file_size + fsbi->bytes_per_cluster - 1) / fsbi->bytes_per_sector;
 	p->attribute = (tmpdentry->DIR_Attr & ATTR_DIRECTORY) ? FS_ATTR_DIR : FS_ATTR_FILE;
@@ -586,37 +586,33 @@ find_lookup_success:
 	finode->write_date = tmpdentry->DIR_WrtTime;
 	finode->write_time = tmpdentry->DIR_WrtDate;
 
-	if ((tmpdentry->DIR_FstClusHI >> 12) && (p->attribute & FS_ATTR_FILE)) {
-		p->attribute |= FS_ATTR_DEVICE;
-	}
-
 	dest_dentry->dir_inode = p;
 	kfree(buf);
 	return dest_dentry;
 }
 
 
-long FAT32_mkdir(struct index_node * inode, struct dir_entry * dentry, int mode) {
+long FAT32_mkdir(struct inode * inode, struct dentry * dentry, int mode) {
 	return -1;
 }
 
-long FAT32_rmdir(struct index_node * inode, struct dir_entry * dentry) {
+long FAT32_rmdir(struct inode * inode, struct dentry * dentry) {
 	return -1;
 }
 
-long FAT32_rename(struct index_node * old_inode, struct dir_entry * old_dentry, struct index_node * new_inode, struct dir_entry * new_dentry) {
+long FAT32_rename(struct inode * old_inode, struct dentry * old_dentry, struct inode * new_inode, struct dentry * new_dentry) {
 	return -1;
 }
 
-long FAT32_getattr(struct dir_entry * dentry, unsigned long * attr) {
+long FAT32_getattr(struct dentry * dentry, unsigned long * attr) {
 	return -1;
 }
 
-long FAT32_setattr(struct dir_entry * dentry, unsigned long * attr) {
+long FAT32_setattr(struct dentry * dentry, unsigned long * attr) {
 	return -1;
 }
 
-struct index_node_operations FAT32_inode_ops = {
+struct inode_operations FAT32_inode_ops = {
 	.create = FAT32_create,
 	.lookup = FAT32_lookup,
 	.mkdir = FAT32_mkdir,
@@ -628,21 +624,21 @@ struct index_node_operations FAT32_inode_ops = {
 
 
 //// these operation need cache and list
-long FAT32_compare(struct dir_entry * parent_dentry, char * source_filename, char * destination_filename) {
+long FAT32_compare(struct dentry * parent_dentry, char * source_filename, char * destination_filename) {
 	return -1;
 }
-long FAT32_hash(struct dir_entry * dentry, char * filename) {
+long FAT32_hash(struct dentry * dentry, char * filename) {
 	return -1;
 }
-long FAT32_release(struct dir_entry * dentry) {
+long FAT32_release(struct dentry * dentry) {
 	return -1;
 }
-long FAT32_iput(struct dir_entry * dentry, struct index_node * inode) {
+long FAT32_iput(struct dentry * dentry, struct inode * inode) {
 	return -1;
 }
 
 
-struct dir_entry_operations FAT32_dentry_ops = {
+struct dentry_operations FAT32_dentry_ops = {
 	.compare = FAT32_compare,
 	.hash = FAT32_hash,
 	.release = FAT32_release,
@@ -660,7 +656,7 @@ void fat32_put_superblock(struct super_block * sb) {
 	kfree(sb);
 }
 
-void fat32_write_inode(struct index_node * inode) {
+void fat32_write_inode(struct inode * inode) {
 	struct FAT32_Directory * fdentry = NULL;
 	struct FAT32_Directory * buf = NULL;
 	struct FAT32_inode_info * finode = inode->private_index_info;
@@ -733,8 +729,8 @@ struct super_block * fat32_read_superblock(struct Disk_Partition_Table_Entry * D
 	color_printk(BLUE, BLACK, "FAT32 FSInfo\n\tFSI_LeadSig:%#018lx\n\tFSI_StrucSig:%#018lx\n\tFSI_Free_Count:%#018lx\n", fsbi->fat_fsinfo->FSI_LeadSig, fsbi->fat_fsinfo->FSI_StrucSig, fsbi->fat_fsinfo->FSI_Free_Count);
 
 	////directory entry
-	sbp->root = (struct dir_entry *)kmalloc(sizeof(struct dir_entry), 0);
-	memset(sbp->root, 0, sizeof(struct dir_entry));
+	sbp->root = (struct dentry *)kmalloc(sizeof(struct dentry), 0);
+	memset(sbp->root, 0, sizeof(struct dentry));
 
 	init_list_head(&sbp->root->child_node);
 	init_list_head(&sbp->root->subdirs_list);
@@ -745,8 +741,8 @@ struct super_block * fat32_read_superblock(struct Disk_Partition_Table_Entry * D
 	sbp->root->name_length = 1;
 
 	////index node
-	sbp->root->dir_inode = (struct index_node *)kmalloc(sizeof(struct index_node), 0);
-	memset(sbp->root->dir_inode, 0, sizeof(struct index_node));
+	sbp->root->dir_inode = (struct inode *)kmalloc(sizeof(struct inode), 0);
+	memset(sbp->root->dir_inode, 0, sizeof(struct inode));
 	sbp->root->dir_inode->inode_ops = &FAT32_inode_ops;
 	sbp->root->dir_inode->f_ops = &FAT32_file_ops;
 	sbp->root->dir_inode->file_size = 0;
@@ -770,11 +766,10 @@ struct super_block * fat32_read_superblock(struct Disk_Partition_Table_Entry * D
 }
 
 
-struct file_system_type FAT32_fs_type = {
+struct filesystem_t FAT32_fs_type = {
 	.name = "FAT32",
 	.fs_flags = 0,
 	.read_superblock = fat32_read_superblock,
-	.next = NULL,
 };
 
 void DISK1_FAT32_FS_init() {

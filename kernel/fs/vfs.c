@@ -13,18 +13,20 @@
 *
 ***************************************************/
 
+#include <spinlock.h>
 #include "vfs.h"
 #include "lib.h"
 #include "printk.h"
 #include "sys/dirent.h"
 #include "errno.h"
 #include "memory.h"
-struct dir_entry *d_alloc(struct dir_entry * parent, const char *name, int len)
+
+struct dentry *d_alloc(struct dentry * parent, const char *name, int len)
 {
-	struct dir_entry *path = (struct dir_entry *)kmalloc(sizeof(struct dir_entry), 0);
+	struct dentry *path = (struct dentry *)kmalloc(sizeof(struct dentry), 0);
 	if(!path) return NULL;
 
-	memset(path, 0, sizeof(struct dir_entry));
+	memset(path, 0, sizeof(struct dentry));
 	
 	char *temp_name = kmalloc(len + 1, 0);
 	if(!temp_name){
@@ -40,21 +42,21 @@ struct dir_entry *d_alloc(struct dir_entry * parent, const char *name, int len)
 	return path;
 }
 
-struct dir_entry * d_lookup(struct dir_entry * parent, char *name, int len){
+struct dentry * d_lookup(struct dentry * parent, char *name, int len){
 	struct list_head *i;
 	list_for_each(i,&parent->subdirs_list){
-		struct dir_entry *temp = container_of(i,struct dir_entry,child_node);
+		struct dentry *temp = container_of(i,struct dentry,child_node);
 		if(!strncmp(name, temp->name, len)){
 			return temp;
 		}
 	}
 	return NULL;
 }
-struct dir_entry * path_walk(char * name, unsigned long flags) {
+struct dentry * path_walk(char * name, unsigned long flags) {
 	char * tmpname = NULL;
 	int tmpnamelen = 0;
-	struct dir_entry * parent = root_sb->root;
-	struct dir_entry * path = NULL;
+	struct dentry * parent = root_sb->root;
+	struct dentry * path = NULL;
 
 	while (*name == '/')
 		name++;
@@ -124,42 +126,77 @@ int fill_dentry(void *buf, char *name, long namelen, long type, long offset) {
 
 //function mount_root
 struct super_block * root_sb = NULL;
-struct file_system_type filesystem = {"filesystem", 0};
+
+static struct list_head __filesystem_list = {
+	.next = &__filesystem_list,
+	.prev = &__filesystem_list,
+};
+static spinlock_t __filesystem_lock = SPIN_LOCK_INIT();
+
+static struct kobj_t * search_class_filesystem_kobj(void)
+{
+	struct kobj_t * kclass = kobj_search_directory_with_create(kobj_get_root(), "class");
+	return kobj_search_directory_with_create(kclass, "filesystem");
+}
+
+struct filesystem_t * search_filesystem(const char * name)
+{
+	struct filesystem_t * pos, * n;
+
+	if(!name)
+		return NULL;
+
+	list_for_each_entry_safe(pos, n, &__filesystem_list, list)
+	{
+		if(strcmp(pos->name, name) == 0)
+			return pos;
+	}
+	return NULL;
+}
 
 struct super_block* mount_fs(char * name, struct Disk_Partition_Table_Entry * DPTE, void * buf) {
-	struct file_system_type * p = NULL;
+	struct filesystem_t * p = search_filesystem(name);
 
-	for (p = &filesystem; p; p = p->next)
-		if (!strcmp(p->name, name)) {
-			return p->read_superblock(DPTE, buf);
-		}
-	return 0;
+	if (p) {
+		return p->read_superblock(DPTE, buf);
+	} else
+		return NULL;
 }
 
-unsigned long register_filesystem(struct file_system_type * fs) {
-	struct file_system_type * p = NULL;
+bool_t register_filesystem(struct filesystem_t * fs)
+{
+	irq_flags_t flags;
 
-	for (p = &filesystem; p; p = p->next)
-		if (!strcmp(fs->name, p->name))
-			return 0;
+	if(!fs || !fs->name)
+		return FALSE;
 
-	fs->next = filesystem.next;
-	filesystem.next = fs;
+	if(search_filesystem(fs->name))
+		return FALSE;
 
-	return 1;
+	fs->kobj = kobj_alloc_directory(fs->name);
+	kobj_add(search_class_filesystem_kobj(), fs->kobj);
+
+	spin_lock_irqsave(&__filesystem_lock, flags);
+	list_add_tail(&fs->list, &__filesystem_list);
+	spin_unlock_irqrestore(&__filesystem_lock, flags);
+
+	return TRUE;
 }
 
-unsigned long unregister_filesystem(struct file_system_type * fs) {
-	struct file_system_type * p = &filesystem;
+bool_t unregister_filesystem(struct filesystem_t * fs)
+{
+	irq_flags_t flags;
 
-	while (p->next)
-		if (p->next == fs) {
-			p->next = p->next->next;
-			fs->next = NULL;
-			return 1;
-		} else
-			p = p->next;
-	return 0;
+	if(!fs || !fs->name)
+		return FALSE;
+
+	spin_lock_irqsave(&__filesystem_lock, flags);
+	list_del(&fs->list);
+	spin_unlock_irqrestore(&__filesystem_lock, flags);
+	kobj_remove(search_class_filesystem_kobj(), fs->kobj);
+	kobj_remove_self(fs->kobj);
+
+	return TRUE;
 }
 
 

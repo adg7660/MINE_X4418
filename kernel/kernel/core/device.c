@@ -28,6 +28,7 @@
 
 #include <core/device.h>
 #include <core/initcall.h>
+#include <sizes.h>
 
 struct list_head __device_list;
 struct list_head __device_head[DEVICE_TYPE_MAX_COUNT];

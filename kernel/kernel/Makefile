@@ -5,3 +5,4 @@ obj-y += softirq.o
 obj-y += task.o
 obj-y += schedule.o
 obj-y += waitqueue.o
+obj-y += preempt.o

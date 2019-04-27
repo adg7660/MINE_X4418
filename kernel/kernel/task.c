@@ -57,7 +57,7 @@ struct task_struct *get_task(long pid) {
 }
 
 struct file * open_exec_file(char * path) {
-	struct dir_entry * dentry = NULL;
+	struct dentry * dentry = NULL;
 	struct file * filp = NULL;
 
 	dentry = path_walk(path, 0);

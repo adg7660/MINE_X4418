@@ -24,6 +24,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <compiler.h>
+#include <limits.h>
 #include "vsprintf.h"
 
 

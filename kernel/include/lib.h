@@ -20,6 +20,7 @@
 #include <string.h>
 #include <list.h>
 #include <irqflags.h>
+#include <kernel.h>
 
 #define sti() local_irq_enable()
 #define cli() local_irq_disable()
@@ -27,12 +28,9 @@
 //#define hlt()
 //#define pause()
 
-
-#define ALIGN(x,a)		(((x) + ((a) - 1)) & (~((a)-1)))
 #define BIT_CLR(x,p)	(((char *)(x))[(p) / (sizeof(char) * 8)] &= ~(1<<((p) % (sizeof(char) * 8))))
 #define BIT_SET(x,p)	(((char *)(x))[(p) / (sizeof(char) * 8)] |=  (1<<((p) % (sizeof(char) * 8))))
 #define BIT_NOT(x,p)	(((char *)(x))[(p) / (sizeof(char) * 8)] ^=  (1<<((p) % (sizeof(char) * 8))))
-#define ARRAY_SIZE(x)	((sizeof(x)) / (sizeof(x[0])))
 #define BITS_PER_LONG	(sizeof(long) * 8)
 
 static inline long verify_area(unsigned char* addr, unsigned long size) {

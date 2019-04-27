@@ -7,6 +7,7 @@ extern "C" {
 
 #include <types.h>
 #include <core/machine.h>
+#include <pgtable.h>
 
 enum {
 	MAP_TYPE_NCNB	= 0x0,

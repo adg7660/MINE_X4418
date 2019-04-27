@@ -1,3 +1,4 @@
-obj-y += fat32.o
+obj-y += fat32/
+#obj-y += sys/
 obj-y += sys.o
 obj-y += vfs.o

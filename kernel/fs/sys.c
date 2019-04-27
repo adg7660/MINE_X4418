@@ -20,7 +20,6 @@
 #include "vfs.h"
 #include "fcntl.h"
 #include "memory.h"
-#include "fat32.h"
 #include "stdio.h"
 #include "fcntl.h"
 #include "ptrace.h"
@@ -43,7 +42,7 @@ unsigned long sys_open(char *filename, int flags) {
 	char * path = NULL;
 	long pathlen = 0;
 	long error = 0;
-	struct dir_entry * dentry = NULL;
+	struct dentry * dentry = NULL;
 	struct file * filp = NULL;
 	struct file ** f = NULL;
 	int fd = -1;
@@ -281,7 +280,7 @@ unsigned long sys_reboot(unsigned long cmd, void * arg) {
 unsigned long sys_chdir(char *filename) {
 	char * path = NULL;
 	long pathlen = 0;
-	struct dir_entry * dentry = NULL;
+	struct dentry * dentry = NULL;
 
 	color_printk(GREEN, BLACK, "sys_chdir\n");
 	path = (char *)kmalloc(PAGE_4K_SIZE, 0);
