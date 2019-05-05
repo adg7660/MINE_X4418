@@ -64,18 +64,18 @@ struct file * open_exec_file(char * path) {
 
 	if (dentry == NULL)
 		return (void *) - ENOENT;
-	if (dentry->dir_inode->attribute == FS_ATTR_DIR)
+	if (S_ISDIR(dentry->d_inode->i_mode))
 		return (void *) - ENOTDIR;
 
 	filp = (struct file *)kmalloc(sizeof(struct file), 0);
 	if (filp == NULL)
 		return (void *) - ENOMEM;
 
-	filp->position = 0;
+	filp->f_pos = 0;
 	filp->mode = 0;
 	filp->dentry = dentry;
 	filp->mode = O_RDONLY;
-	filp->f_ops = dentry->dir_inode->f_ops;
+	filp->f_ops = dentry->d_inode->f_ops;
 
 	return filp;
 }
@@ -123,7 +123,7 @@ unsigned long do_execve(struct pt_regs *regs, char *name, char *argv[], char *en
 	current->mm->end_data = 0;
 	current->mm->start_rodata = 0;
 	current->mm->end_rodata = 0;
-	current->mm->start_bss = code_start_addr + filp->dentry->dir_inode->file_size;
+	current->mm->start_bss = code_start_addr + filp->dentry->d_inode->i_size;
 	current->mm->end_bss = stack_start_addr;
 	current->mm->start_brk = brk_start_addr;
 	current->mm->end_brk = brk_start_addr;
@@ -154,7 +154,7 @@ unsigned long do_execve(struct pt_regs *regs, char *name, char *argv[], char *en
 
 	pos = 0;
 
-	retval = filp->f_ops->read(filp, (void *)code_start_addr, filp->dentry->dir_inode->file_size, &pos);
+	retval = filp->f_ops->read(filp, (void *)code_start_addr, filp->dentry->d_inode->i_size, &pos);
 
 	regs->ARM_pc = code_start_addr;
 	regs->ARM_sp = stack_start_addr;
@@ -168,7 +168,7 @@ unsigned long do_execve(struct pt_regs *regs, char *name, char *argv[], char *en
 }
 
 unsigned long init(unsigned long arg) {
-	DISK1_FAT32_FS_init();
+	mount_fs("/", "card.sdhci-xl00500.0.p0", "FAT32");
 
 	color_printk(RED, BLACK, "init task is running,arg:%#018lx\n", arg);
 
@@ -181,12 +181,13 @@ unsigned long init(unsigned long arg) {
 	}
 
 	//TODO:考虑CPSR
-	__asm__	__volatile__("mov	sp, %0		\n\t"
-						 "b		ret_system_call\n\t"
-						 :
-						 :"r"(regs)
-						 :"memory"
-						);
+	asm	volatile(
+		"mov	sp, %0		\n\t"
+		"b		ret_system_call\n\t"
+		:
+		:"r"(regs)
+		:"memory"
+	);
 	return 1;
 }
 

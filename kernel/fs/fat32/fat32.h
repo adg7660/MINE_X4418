@@ -14,47 +14,69 @@
 ***************************************************/
 
 #ifndef __FAT32_H__
-
 #define __FAT32_H__
 
-struct FAT32_BootSector {
-	unsigned char BS_jmpBoot[3];
-	unsigned char BS_OEMName[8];
-	unsigned short BPB_BytesPerSec;
-	unsigned char BPB_SecPerClus;
-	unsigned short BPB_RsvdSecCnt;
-	unsigned char BPB_NumFATs;
-	unsigned short BPB_RootEntCnt;
-	unsigned short BPB_TotSec16;
-	unsigned char BPB_Media;
-	unsigned short BPB_FATSz16;
-	unsigned short BPB_SecPerTrk;
-	unsigned short BPB_NumHeads;
-	unsigned int BPB_HiddSec;
-	unsigned int BPB_TotSec32;
+#include <types.h>
 
-	unsigned int BPB_FATSz32;
-	unsigned short BPB_ExtFlags;
-	unsigned short BPB_FSVer;
-	unsigned int BPB_RootClus;
-	unsigned short BPB_FSInfo;
-	unsigned short BPB_BkBootSec;
-	unsigned char BPB_Reserved[12];
+/*
+ * Extended boot sector information for FAT12/FAT16
+ */
+struct fat_bootsec_ext16_t {
+	u8_t drive_number;
+	u8_t reserved;
+	u8_t extended_signature;
+	u32_t serial_number;
+	u8_t volume_label[11];
+	u8_t fs_type[8];
+	u8_t boot_code[448];
+	u16_t boot_sector_signature;
+} __attribute__ ((packed));
 
-	unsigned char BS_DrvNum;
-	unsigned char BS_Reserved1;
-	unsigned char BS_BootSig;
-	unsigned int BS_VolID;
-	unsigned char BS_VolLab[11];
-	unsigned char BS_FilSysType[8];
+/*
+ * Extended boot sector information for FAT32
+ */
+struct fat_bootsec_ext32_t {
+	u32_t sectors_per_fat;
+	u16_t fat_flags;
+	u16_t version;
+	u32_t root_directory_cluster;
+	u16_t fs_info_sector;
+	u16_t boot_sector_copy;
+	u8_t reserved1[12];
+	u8_t drive_number;
+	u8_t reserved2;
+	u8_t extended_signature;
+	u32_t serial_number;
+	u8_t volume_label[11];
+	u8_t fs_type[8];
+	u8_t boot_code[420];
+	u16_t boot_sector_signature;
+} __attribute__ ((packed));
 
-	unsigned char BootCode[420];
+struct fat_bootsec_t {
+	u8_t jump[3];
+	u8_t oem_name[8];
+	u16_t bytes_per_sector;
+	u8_t sectors_per_cluster;
+	u16_t reserved_sector_count;
+	u8_t number_of_fat;
+	u16_t root_entry_count;
+	u16_t total_sectors_16;
+	u8_t media_type;
+	u16_t sectors_per_fat;
+	u16_t sectors_per_track;
+	u16_t number_of_heads;
+	u32_t hidden_sector_count;
+	u32_t total_sectors_32;
 
-	unsigned short BS_TrailSig;
+	union {
+		struct fat_bootsec_ext16_t e16;
+		struct fat_bootsec_ext32_t e32;
+	};
 } __attribute__((packed));
 
 
-struct FAT32_FSInfo {
+struct fat32_fs_info {
 	unsigned int FSI_LeadSig;
 	unsigned char FSI_Reserved1[480];
 	unsigned int FSI_StrucSig;
@@ -72,75 +94,98 @@ struct FAT32_FSInfo {
 #define ATTR_ARCHIVE	(1 << 5)
 #define ATTR_LONG_NAME	(ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID)
 
-struct FAT32_Directory {
-	unsigned char DIR_Name[11];
-	unsigned char DIR_Attr;
-	unsigned char DIR_NTRes;	//EXT|BASE => 8(BASE).3(EXT)
+struct fat_date{
+	u16_t day:5;
+	u16_t month:4;
+	u16_t year:7;
+} __attribute__((packed));
+
+struct fat_time{
+	u16_t seconds:5;
+	u16_t minutes:6;
+	u16_t hours:5;
+} __attribute__((packed));
+
+struct fat_dirent_t {
+	u8_t dos_file_name[11];
+	u8_t file_attributes;
+	u8_t DIR_NTRes;
+	//EXT|BASE => 8(BASE).3(EXT)
 	//BASE:LowerCase(8),UpperCase(0)
 	//EXT:LowerCase(16),UpperCase(0)
-	unsigned char DIR_CrtTimeTenth;
-	unsigned short DIR_CrtTime;
-	unsigned short DIR_CrtDate;
-	unsigned short DIR_LastAccDate;
-	unsigned short DIR_FstClusHI;
-	unsigned short DIR_WrtTime;
-	unsigned short DIR_WrtDate;
-	unsigned short DIR_FstClusLO;
-	unsigned int DIR_FileSize;
+	u8_t create_time_millisecs;
+	struct fat_time create_time;
+	struct fat_date create_date;
+	struct fat_date laccess_date;
+	u16_t first_cluster_hi;
+	struct fat_time lmodify_time;
+	struct fat_date lmodify_date;
+	u16_t first_cluster_lo;
+	u32_t file_size;
 } __attribute__((packed));
 
 #define LOWERCASE_BASE (8)
 #define LOWERCASE_EXT (16)
 
-struct FAT32_LongDirectory {
-	unsigned char LDIR_Ord;
-	unsigned short LDIR_Name1[5];
-	unsigned char LDIR_Attr;
-	unsigned char LDIR_Type;
-	unsigned char LDIR_Chksum;
-	unsigned short LDIR_Name2[6];
-	unsigned short LDIR_FstClusLO;
-	unsigned short LDIR_Name3[2];
+struct fat_longname_t {
+	u8_t seqno;
+	u16_t name_utf16_1[5];
+	u8_t file_attributes;
+	u8_t type;
+	u8_t checksum;
+	u16_t name_utf16_2[6];
+	u16_t first_cluster;
+	u16_t name_utf16_3[2];
 } __attribute__((packed));
 
-void DISK1_FAT32_FS_init();
 
 /////////////FAT32 for VFS
 
-struct FAT32_sb_info {
-	unsigned long start_sector;
-	unsigned long sector_count;
+struct fat32_sb_info {
+	/* FAT boot sector */
+	struct fat_bootsec_t bsec;
 
-	long sector_per_cluster;
-	long bytes_per_cluster;
-	long bytes_per_sector;
+	/* Underlying block device */
+	struct block_t * bdev;
 
-	unsigned long Data_firstsector;
-	unsigned long FAT1_firstsector;
-	unsigned long sector_per_FAT;
-	unsigned long NumFATs;
+	u32_t sector_count;
 
-	unsigned long fsinfo_sector_infat;
-	unsigned long bootsector_bk_infat;
+	u32_t sector_per_cluster;
+	u32_t bytes_per_cluster;
+	u32_t bytes_per_sector;
 
-	struct FAT32_FSInfo * fat_fsinfo;
+	u32_t first_data_sector;
+	u32_t first_fat_sector;
+	u32_t sectors_per_fat;
+	u32_t number_of_fat;
+
+	u32_t fsinfo_sector_infat;
+	u32_t bootsector_bk_infat;
+	
+	struct fat32_fs_info * fat_fsinfo;
 };
 
-struct FAT32_inode_info {
-	unsigned long first_cluster;
-	unsigned long dentry_location;	////dentry struct in cluster(0 is root,1 is invalid)
-	unsigned long dentry_position;	////dentry struct offset in cluster
+struct fat32_inode_info {
+	u32_t first_cluster;
+	u32_t dentry_location;	////dentry struct in cluster(0 is root,1 is invalid)
+	u32_t dentry_position;	////dentry struct offset in cluster
 
-	unsigned short create_date;
-	unsigned short create_time;
+	struct fat_date create_date;
+	struct fat_time create_time;
 
-	unsigned short write_date;
-	unsigned short write_time;
+	struct fat_date write_date;
+	struct fat_time write_time;
+	
+	struct fat32_sb_info * fsbi;
 };
 
-unsigned int DISK1_FAT32_read_FAT_Entry(struct FAT32_sb_info * fsbi, unsigned int fat_entry);
-unsigned long DISK1_FAT32_write_FAT_Entry(struct FAT32_sb_info * fsbi, unsigned int fat_entry, unsigned int value);
-unsigned long FAT32_find_available_cluster(struct FAT32_sb_info * fsbi);
+long fat32_read_cluster(struct fat32_sb_info * fsbi, u32_t cluster, u8_t *buf);
+u32_t fat32_node_read(struct file * filp, u8_t *buf, size_t count, off_t *pos);
+u32_t fat32_node_write(struct file * filp, u8_t *buf, size_t count, off_t *pos);
+
+bool_t fat32_read_fat_entry(struct fat32_sb_info * fsbi, u32_t *fat_entry);
+bool_t fat32_write_fat_entry(struct fat32_sb_info * fsbi, u32_t fat_entry, u32_t value);
+bool_t fat32_find_available_cluster(struct fat32_sb_info * fsbi, u32_t *fat_entry);
 
 extern struct inode_operations FAT32_inode_ops;
 extern struct file_operations FAT32_file_ops;

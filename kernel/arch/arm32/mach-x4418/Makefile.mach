@@ -1,6 +1,6 @@
 DEFINES		+= -D__ARM32_ARCH__=7 -D__CORTEX_A9__ -D__ARM32_NEON__
 
-WFLAGS		:= -Wall -Wno-unused
+WFLAGS		:= -w
 
 ASFLAGS		:= $(WFLAGS)
 CFLAGS		:= $(WFLAGS)

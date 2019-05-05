@@ -38,7 +38,7 @@ unsigned long sys_putstring(char *string) {
 	color_printk(ORANGE, WHITE, "%s", string);
 	return 0;
 }
-unsigned long sys_open(char *filename, int flags) {
+unsigned long sys_open(const char *filename, u32_t flags, u32_t mode) {
 	char * path = NULL;
 	long pathlen = 0;
 	long error = 0;
@@ -61,7 +61,7 @@ unsigned long sys_open(char *filename, int flags) {
 		kfree(path);
 		return -ENAMETOOLONG;
 	}
-	strncpy_from_user(filename, path, pathlen);
+	strncpy_from_user(path, filename, pathlen);
 
 	dentry = path_walk(path, 0);
 	kfree(path);
@@ -69,34 +69,24 @@ unsigned long sys_open(char *filename, int flags) {
 	if (dentry == NULL)
 		return -ENOENT;
 
-	if ((flags & O_DIRECTORY) && (dentry->dir_inode->attribute != FS_ATTR_DIR))
-		return -ENOTDIR;
-	if (!(flags & O_DIRECTORY) && (dentry->dir_inode->attribute == FS_ATTR_DIR))
-		return -EISDIR;
-
 	filp = (struct file *)kmalloc(sizeof(struct file), 0);
 	memset(filp, 0, sizeof(struct file));
 	filp->dentry = dentry;
 	filp->mode = flags;
+	filp->f_ops = dentry->d_inode->f_ops;
 
-	if (dentry->dir_inode->attribute & FS_ATTR_DEVICE){
-		//filp->f_ops = &keyboard_fops;	//////	find device file operation function
-		kfree(filp);
-		return -EFAULT;
-	}else
-		filp->f_ops = dentry->dir_inode->f_ops;
 	if (filp->f_ops && filp->f_ops->open)
-		error = filp->f_ops->open(dentry->dir_inode, filp);
+		error = filp->f_ops->open(dentry->d_inode, filp);
 	if (error != 1) {
 		kfree(filp);
 		return -EFAULT;
 	}
 
 	if (filp->mode & O_TRUNC) {
-		filp->dentry->dir_inode->file_size = 0;
+		filp->dentry->d_inode->i_size = 0;
 	}
 	if (filp->mode & O_APPEND) {
-		filp->position = filp->dentry->dir_inode->file_size;
+		filp->f_pos = filp->dentry->d_inode->i_size;
 	}
 
 	f = current->file_struct;
@@ -123,7 +113,7 @@ unsigned long sys_close(int fd) {
 
 	filp = current->file_struct[fd];
 	if (filp->f_ops && filp->f_ops->close)
-		filp->f_ops->close(filp->dentry->dir_inode, filp);
+		filp->f_ops->close(filp->dentry->d_inode, filp);
 
 	kfree(filp);
 	current->file_struct[fd] = NULL;
@@ -142,7 +132,7 @@ unsigned long sys_read(int fd, void * buf, long count) {
 
 	filp = current->file_struct[fd];
 	if (filp->f_ops && filp->f_ops->read)
-		ret = filp->f_ops->read(filp, buf, count, &filp->position);
+		ret = filp->f_ops->read(filp, buf, count, &filp->f_pos);
 	return ret;
 }
 unsigned long sys_write(int fd, void * buf, long count) {
@@ -157,7 +147,7 @@ unsigned long sys_write(int fd, void * buf, long count) {
 
 	filp = current->file_struct[fd];
 	if (filp->f_ops && filp->f_ops->write)
-		ret = filp->f_ops->write(filp, buf, count, &filp->position);
+		ret = filp->f_ops->write(filp, buf, count, &filp->f_pos);
 	return ret;
 }
 unsigned long sys_lseek(int filds, long offset, int whence) {
@@ -201,7 +191,7 @@ unsigned long sys_execve(struct pt_regs *regs) {
 		kfree(pathname);
 		return -ENAMETOOLONG;
 	}
-	strncpy_from_user((char *)regs->ARM_r0, pathname, pathlen);
+	strncpy_from_user(pathname, (char *)regs->ARM_r0, pathlen);
 
 	error = do_execve(regs, pathname, (char **)regs->ARM_r1, NULL);
 
@@ -231,7 +221,8 @@ unsigned long sys_wait4(unsigned long pid, int *status, int options, void *rusag
 		return -EINVAL;
 
 	if (child->state == TASK_ZOMBIE) {
-		copy_to_user(&child->exit_code, status, sizeof(int));
+		//TODO
+		copy_to_user(status, &child->exit_code, sizeof(int));
 		tsk->next = child->next;
 		exit_mm(child);
 		kfree(child);
@@ -240,7 +231,7 @@ unsigned long sys_wait4(unsigned long pid, int *status, int options, void *rusag
 
 	interruptible_sleep_on(&current->wait_childexit);
 
-	copy_to_user(&child->exit_code, status, sizeof(long));
+	copy_to_user(status, &child->exit_code, sizeof(long));
 	tsk->next = child->next;
 	exit_mm(child);
 	kfree(child);
@@ -296,14 +287,14 @@ unsigned long sys_chdir(char *filename) {
 		kfree(path);
 		return -ENAMETOOLONG;
 	}
-	strncpy_from_user(filename, path, pathlen);
+	strncpy_from_user(path, filename, pathlen);
 
 	dentry = path_walk(path, 0);
 	kfree(path);
 
 	if (dentry == NULL)
 		return -ENOENT;
-	if (dentry->dir_inode->attribute != FS_ATTR_DIR)
+	if (!S_ISDIR(dentry->d_inode->i_mode))
 		return -ENOTDIR;
 	return 0;
 }
@@ -321,4 +312,44 @@ unsigned long sys_getdents(int fd, void * dirent, long count) {
 	if (filp->f_ops && filp->f_ops->readdir)
 		ret = filp->f_ops->readdir(filp, dirent, &fill_dentry);
 	return ret;
+}
+
+static void copy_stat(struct inode *inode , struct stat *statbuf) {
+	statbuf->st_mode = inode->i_mode;
+	statbuf->st_size = inode->i_size;
+	statbuf->st_atime = inode->i_atime;
+	statbuf->st_mtime = inode->i_mtime;
+	statbuf->st_ctime = inode->i_ctime;
+}
+
+unsigned long sys_stat(char *filename, struct stat *statbuf) {
+	char * path = NULL;
+	long pathlen = 0;
+	struct dentry * dentry = NULL;
+
+	path = (char *)kmalloc(PAGE_4K_SIZE, 0);
+	if (path == NULL)
+		return -ENOMEM;
+	memset(path, 0, PAGE_4K_SIZE);
+	pathlen = strnlen_user(filename, PAGE_4K_SIZE);
+	if (pathlen <= 0) {
+		kfree(path);
+		return -EFAULT;
+	} else if (pathlen >= PAGE_4K_SIZE) {
+		kfree(path);
+		return -ENAMETOOLONG;
+	}
+	strncpy_from_user(path, filename, pathlen);
+
+	dentry = path_walk(path, 0);
+	kfree(path);
+
+	if (dentry == NULL)
+		return -ENOENT;
+
+	copy_stat(dentry->d_inode , statbuf);
+	return 0;
+}
+unsigned long sys_fstat(int fd, struct stat *statbuf) {
+	return 0;
 }

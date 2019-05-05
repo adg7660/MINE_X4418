@@ -180,11 +180,11 @@ static bool_t sdmmc_getclkparam(char *clk_name, clkinfo *info)
 	if((src_freq == 0) || (src_freq / (256 * 255 * 2) > info->freq) || (src_freq < info->freq))
 		return FALSE;
 
-	u64_t min = ~0ull;
+	s32_t min = src_freq;
 
 	for(u32_t i = 0; i < 256; i++)
 	{
-		u64_t temp;
+		s64_t temp;
 		u32_t div = i * 2;
 		if(i == 0)
 			div = 1;
@@ -207,7 +207,7 @@ static bool_t sdmmc_getclkparam(char *clk_name, clkinfo *info)
 			min = temp;
 			info->clkdiv = div;
 			info->clkgendiv = gendiv;
-			//LOG("f = %d,gendiv =%d, div =%d,rst =%d d = %llu", info->freq, gendiv, div, src_freq / (gendiv * div), temp);
+			//LOG("f = %d,gendiv =%d, div =%d,rst =%d d = %d", info->freq, gendiv, div, src_freq / (gendiv * div), (int)temp);
 		}
 	}
 	return min != ~0ull;
@@ -336,6 +336,9 @@ static bool_t sdmmc_setclock(struct sdhci_xl00500_pdata_t *pdat, bool_t enb, u32
 	// 2. Disable the output clock.
 	psdmmc_reg->CLKENA &= ~SDXC_CLKENA_CLKENB;
 	psdmmc_reg->CLKENA |= SDXC_CLKENA_LOWPWR;		// low power mode & clock disable
+
+	//TODO:不加延时，设置较高频率失败
+	for(volatile int i=0; i < 1000000; i++ );
 
 	clk_info.pllnum = get_pllnum(pdat->clk_name);
 	clk_info.freq = nFreq;

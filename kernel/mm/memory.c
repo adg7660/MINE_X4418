@@ -16,6 +16,7 @@
 #include "assert.h"
 #include "task.h"
 #include "memory.h"
+#include "malloc.h"
 #include "printk.h"
 #include "lib.h"
 #include "errno.h"
@@ -467,12 +468,11 @@ ret_null:
 	return NULL;
 }
 
-void *malloc(unsigned long size) {
+void * malloc(size_t size) {
 	return kmalloc(size, 0);
 }
 
-void * memalign(size_t align, size_t size)
-{
+void * memalign(size_t align, size_t size) {
 	void * m;
 
 	m = kmalloc(size, 0);
@@ -483,8 +483,7 @@ void * memalign(size_t align, size_t size)
 	return m;
 }
 
-void * kcalloc(unsigned long nmemb, unsigned long  size, unsigned long gfp_flages)
-{
+void * kcalloc(size_t nmemb, size_t size, unsigned long gfp_flages) {
 	void * m;
 
 	if((m = kmalloc(nmemb * size, gfp_flages)))
@@ -492,8 +491,7 @@ void * kcalloc(unsigned long nmemb, unsigned long  size, unsigned long gfp_flage
 	return m;
 }
 
-void * calloc(unsigned long nmemb, unsigned long  size)
-{
+void * calloc(size_t nmemb, size_t size) {
 	return kcalloc(nmemb, size, 0);
 }
 /*
@@ -647,8 +645,8 @@ unsigned long kfree(void *address) {
 	return 0;
 }
 
-unsigned long free(void *address) {
-	return kfree(address);
+void free(void * ptr) {
+	return kfree(ptr);
 }
 /*
 

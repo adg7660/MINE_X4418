@@ -88,7 +88,7 @@ struct task_struct {
 	long exit_code;
 
 	struct file * file_struct[TASK_FILE_MAX];
-
+	struct dentry *pwd;
 	wait_queue_T wait_childexit;
 	struct task_struct *next;
 	struct task_struct *parent;

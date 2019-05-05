@@ -21,6 +21,9 @@
 #include "errno.h"
 #include "memory.h"
 
+
+struct super_block * root_sb = NULL;
+
 struct dentry *d_alloc(struct dentry * parent, const char *name, int len)
 {
 	struct dentry *path = (struct dentry *)kmalloc(sizeof(struct dentry), 0);
@@ -44,6 +47,13 @@ struct dentry *d_alloc(struct dentry * parent, const char *name, int len)
 
 struct dentry * d_lookup(struct dentry * parent, char *name, int len){
 	struct list_head *i;
+
+	if (!strncmp(name, ".", len)) {
+		return parent;
+	} else if(!strncmp(name, "..", len)) {
+		return parent->parent;
+	}
+
 	list_for_each(i,&parent->subdirs_list){
 		struct dentry *temp = container_of(i,struct dentry,child_node);
 		if(!strncmp(name, temp->name, len)){
@@ -77,14 +87,12 @@ struct dentry * path_walk(char * name, unsigned long flags) {
 			path = d_alloc(parent, tmpname, tmpnamelen);
 			if (path == NULL)
 				return NULL;
-		}
-		
-
-		if (parent->dir_inode->inode_ops->lookup(parent->dir_inode, path) == NULL) {
-			color_printk(RED, WHITE, "can not find file or dir:%s\n", path->name);
-			kfree(path->name);
-			kfree(path);
-			return NULL;
+			if (parent->d_inode->inode_ops->lookup(parent->d_inode, path) == NULL) {
+				color_printk(RED, WHITE, "can not find file or dir:%s\n", path->name);
+				kfree(path->name);
+				kfree(path);
+				return NULL;
+			}
 		}
 
 		init_list_head(&path->child_node);
@@ -113,19 +121,18 @@ last_component:
 
 int fill_dentry(void *buf, char *name, long namelen, long type, long offset) {
 	struct dirent* dent = (struct dirent*)buf;
+	int reclen = ALIGN(sizeof(struct dirent) + namelen + 1, sizeof(int));////TODO:可能多加一点，万一宽字符
 
 	if ((unsigned long)buf < TASK_SIZE && !verify_area(buf, sizeof(struct dirent) + namelen))
 		return -EFAULT;
 
-	memcpy(dent->d_name, name, namelen);
-	dent->d_namelen = namelen;
+	memcpy(dent->d_name, name, reclen);
+	dent->d_reclen = reclen;
 	dent->d_type = type;
-	dent->d_offset = offset;
-	return sizeof(struct dirent) + namelen;
+	dent->d_off = offset;
+	return sizeof(struct dirent) + reclen;
 }
 
-//function mount_root
-struct super_block * root_sb = NULL;
 
 static struct list_head __filesystem_list = {
 	.next = &__filesystem_list,
@@ -154,13 +161,22 @@ struct filesystem_t * search_filesystem(const char * name)
 	return NULL;
 }
 
-struct super_block* mount_fs(char * name, struct Disk_Partition_Table_Entry * DPTE, void * buf) {
+bool_t mount_fs(char * path, char *dev, char * name) {
+	struct block_t * bdev;
 	struct filesystem_t * p = search_filesystem(name);
-
 	if (p) {
-		return p->read_superblock(DPTE, buf);
+		if(dev == NULL)
+			return FALSE;
+		while(1){
+			if(bdev = search_block(dev))
+				break;	
+		}
+		struct super_block *sb = p->read_superblock(bdev);
+		if((!strcmp(path, "/")) && root_sb == NULL)
+			root_sb = sb;
+		return TRUE;
 	} else
-		return NULL;
+		return FALSE;
 }
 
 bool_t register_filesystem(struct filesystem_t * fs)

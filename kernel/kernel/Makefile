@@ -1,5 +1,6 @@
 obj-y += core/
 obj-y += time/
+obj-y += command/
 #obj-y += command.o
 obj-y += softirq.o
 obj-y += task.o

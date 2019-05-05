@@ -671,6 +671,8 @@ static int sdcard_disk_timer_function(struct timer_t * timer, void * data)
 		{
 			if(sdcard_detect(pdat->hci, &pdat->card))
 			{
+				sdhci_set_clock(pdat->hci, pdat->card.tran_speed);
+
 				snprintf(buf, sizeof(buf), "card.%s", pdat->hci->name);
 				pdat->disk.name = strdup(buf);
 				pdat->disk.size = pdat->card.read_bl_len;

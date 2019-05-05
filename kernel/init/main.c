@@ -37,8 +37,7 @@ int main() {
 	framebuffer_set_backlight(fb, CONFIG_MAX_BRIGHTNESS);
 
 	task_init();
-	printf("do_exitcalls\n");
-	while(1);
+	cmd_loop();
 	/* Do all exit calls */
 	do_exitcalls();
 	while (1);

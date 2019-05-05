@@ -45,21 +45,21 @@ static inline long verify_area(unsigned char* addr, unsigned long size) {
 #endif
 }
 
-static inline long copy_from_user(void * from, void * to, unsigned long size) {
+static inline long copy_from_user(void * to, void * from, unsigned long size) {
 	if (!verify_area(from, size))
 		return 0;
 	memcpy(to, from, size);
 	return size;
 }
 
-static inline long copy_to_user(void * from, void * to, unsigned long size) {
+static inline long copy_to_user(void * to, void * from, unsigned long size) {
 	if (!verify_area(to, size))
 		return 0;
 	memcpy(to, from, size);
 	return size;
 }
 
-static inline long strncpy_from_user(void * from, void * to, unsigned long size) {
+static inline long strncpy_from_user(void * to, void * from, unsigned long size) {
 	if (!verify_area(from, size))
 		return 0;
 

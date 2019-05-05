@@ -21,9 +21,6 @@
 #include <string.h>
 #include <stddef.h>
 
-void serial_putc(unsigned char c);
-unsigned char serial_getc(void);
-extern unsigned int xsize;
 void putc(unsigned char c)
 {
 	if(c=='\n')
@@ -35,7 +32,9 @@ void putc(unsigned char c)
 
 unsigned char getc(void)
 {
-    return ' ';
+	unsigned char res;
+	while(console_stdin_read(&res, 1) <= 0);
+	return res;
 }
 
 int puts(const char *s)
